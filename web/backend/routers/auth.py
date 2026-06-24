@@ -50,7 +50,7 @@ def register(req: RegisterRequest, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(user)
 
-    token = auth_utils.create_access_token({"sub": user.id})
+    token = auth_utils.create_access_token({"sub": str(user.id)})
     return {"access_token": token, "token_type": "bearer", "user": user}
 
 
@@ -60,7 +60,7 @@ def login(form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get
     if not user or not auth_utils.verify_password(form.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid username or password")
 
-    token = auth_utils.create_access_token({"sub": user.id})
+    token = auth_utils.create_access_token({"sub": str(user.id)})
     return {"access_token": token, "token_type": "bearer", "user": user}
 
 
