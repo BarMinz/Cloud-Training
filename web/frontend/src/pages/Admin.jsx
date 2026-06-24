@@ -173,13 +173,15 @@ export default function Admin() {
                       <option value="admin">admin</option>
                     </select>
 
-                    <button
-                      onClick={() => deleteUser(user.id, user.username)}
-                      disabled={actionLoading === `del-${user.id}`}
-                      className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
-                    >
-                      {actionLoading === `del-${user.id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                    </button>
+                    <div title={user.role === 'admin' ? 'Demote to employee before deleting' : ''}>
+                      <button
+                        onClick={() => deleteUser(user.id, user.username)}
+                        disabled={actionLoading === `del-${user.id}` || user.role === 'admin'}
+                        className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-slate-500 disabled:hover:bg-transparent"
+                      >
+                        {actionLoading === `del-${user.id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                      </button>
+                    </div>
 
                     <button
                       onClick={() => toggleExpand(user.id)}

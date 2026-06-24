@@ -135,6 +135,8 @@ def delete_user(
     if current_admin.id == user_id:
         raise HTTPException(status_code=400, detail="Cannot delete yourself")
     user = db.query(models.User).filter(models.User.id == user_id).first()
+    if user and user.role == models.UserRole.admin:
+        raise HTTPException(status_code=400, detail="Cannot delete an admin account. Demote to employee first.")
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     db.delete(user)
