@@ -16,8 +16,11 @@ def get_summary(
     users = db.query(models.User).all()
     total = len(users)
 
+    trainees = [u for u in users if u.role != models.UserRole.main_admin]
+    trainee_count = len(trainees)
+
     certified = sum(
-        1 for u in users
+        1 for u in trainees
         if sum(1 for p in u.progress if p.status == models.PhaseStatus.completed) == 10
     )
 
@@ -36,7 +39,7 @@ def get_summary(
     return {
         "total_users": total,
         "fully_certified": certified,
-        "certification_rate": round(certified / total * 100, 1) if total else 0,
+        "certification_rate": round(certified / trainee_count * 100, 1) if trainee_count else 0,
         "avg_phases_completed": avg_phases,
         "active_users_7d": active,
     }
