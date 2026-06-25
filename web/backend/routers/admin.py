@@ -6,6 +6,9 @@ from datetime import datetime
 from database import get_db
 import models
 import auth as auth_utils
+from routers.containers import container_name, _run
+
+TOTAL_PHASES = 10
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
@@ -29,9 +32,18 @@ class ProgressEntry(BaseModel):
     notes: str
     started_at: Optional[datetime]
     completed_at: Optional[datetime]
+    grade: Optional[str] = None
+    feedback: Optional[str] = None
+    reviewed_by: Optional[int] = None
+    reviewed_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
+
+
+class ReviewSubmit(BaseModel):
+    grade: str          # "passed" | "not_passed"
+    feedback: Optional[str] = None
 
 
 class UserDetail(BaseModel):
@@ -118,6 +130,10 @@ def update_role(
     user = db.query(models.User).filter(models.User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    if user.role == models.UserRole.main_admin:
+        raise HTTPException(status_code=400, detail="Cannot change the role of the main admin")
+    if body.role == models.UserRole.main_admin:
+        raise HTTPException(status_code=400, detail="Cannot assign the main admin role")
     try:
         user.role = models.UserRole(body.role)
     except ValueError:
@@ -135,9 +151,84 @@ def delete_user(
     if current_admin.id == user_id:
         raise HTTPException(status_code=400, detail="Cannot delete yourself")
     user = db.query(models.User).filter(models.User.id == user_id).first()
+    if user and user.role == models.UserRole.main_admin:
+        raise HTTPException(status_code=400, detail="Cannot delete the main admin account.")
     if user and user.role == models.UserRole.admin:
         raise HTTPException(status_code=400, detail="Cannot delete an admin account. Demote to employee first.")
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     db.delete(user)
     db.commit()
+
+
+@router.get("/users/{user_id}/progress/{phase_id}/simulation")
+def get_simulation_data(
+    user_id: int,
+    phase_id: int,
+    _: models.User = Depends(auth_utils.require_admin),
+    db: Session = Depends(get_db),
+):
+    record = db.query(models.PhaseProgress).filter_by(user_id=user_id, phase_id=phase_id).first()
+    if not record:
+        raise HTTPException(status_code=404, detail="No progress record found")
+    return {"sim_data": record.sim_data}
+
+
+@router.post("/users/{user_id}/progress/{phase_id}/reset", status_code=200)
+def reset_phase(
+    user_id: int,
+    phase_id: int,
+    _: models.User = Depends(auth_utils.require_admin),
+    db: Session = Depends(get_db),
+):
+    if not 1 <= phase_id <= TOTAL_PHASES:
+        raise HTTPException(status_code=404, detail="Phase not found")
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    record = db.query(models.PhaseProgress).filter_by(user_id=user_id, phase_id=phase_id).first()
+    if not record:
+        raise HTTPException(status_code=404, detail="Progress record not found")
+    record.status = models.PhaseStatus.not_started
+    record.started_at = None
+    record.completed_at = None
+    record.updated_at = datetime.utcnow()
+    record.sim_data = None
+    record.grade = None
+    record.feedback = None
+    record.reviewed_by = None
+    record.reviewed_at = None
+    db.commit()
+
+    if phase_id == 2:
+        _run(['docker', 'rm', '-f', container_name(user_id)])
+
+    return {"ok": True}
+
+
+@router.post("/users/{user_id}/progress/{phase_id}/review", status_code=200)
+def submit_review(
+    user_id: int,
+    phase_id: int,
+    body: ReviewSubmit,
+    current_admin: models.User = Depends(auth_utils.require_admin),
+    db: Session = Depends(get_db),
+):
+    if body.grade not in ("passed", "not_passed"):
+        raise HTTPException(status_code=400, detail="Grade must be 'passed' or 'not_passed'")
+    if not 1 <= phase_id <= TOTAL_PHASES:
+        raise HTTPException(status_code=404, detail="Phase not found")
+    record = db.query(models.PhaseProgress).filter_by(user_id=user_id, phase_id=phase_id).first()
+    if not record:
+        raise HTTPException(status_code=404, detail="Progress record not found")
+    record.grade = body.grade
+    record.feedback = body.feedback or ""
+    record.reviewed_by = current_admin.id
+    record.reviewed_at = datetime.utcnow()
+    db.commit()
+    return {
+        "grade": record.grade,
+        "feedback": record.feedback,
+        "reviewed_by": record.reviewed_by,
+        "reviewed_at": record.reviewed_at,
+    }
