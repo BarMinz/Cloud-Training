@@ -645,7 +645,8 @@ export default function Admin() {
                 <div className="w-56 shrink-0 border-r border-white/8 overflow-y-auto">
                   {simViewer.tickets.map((t) => {
                     const meta = SIMULATION_TICKETS.find((s) => s.id === t.id)
-                    const pm = PRIORITY_META[t.priority]
+                    const assigned = PRIORITY_META[t.assignedPriority ?? 'unassigned']
+                    const isCorrect = t.assignedPriority === meta?.priority
                     const isActive = t.id === simViewerActiveId
                     return (
                       <button
@@ -657,12 +658,20 @@ export default function Admin() {
                         )}
                       >
                         <div className="flex items-center gap-1.5 mb-1">
-                          <div className={clsx('w-1.5 h-1.5 rounded-full shrink-0', pm.dot)} />
+                          <div className={clsx('w-1.5 h-1.5 rounded-full shrink-0', assigned.dot)} />
                           <span className="text-xs font-mono text-slate-500">{t.id}</span>
                           {t.status === 'resolved' && <span className="ml-auto text-xs text-emerald-400">✓</span>}
                         </div>
                         <p className="text-xs text-slate-300 leading-snug line-clamp-2">{meta?.subject || t.subject}</p>
-                        <p className={clsx('text-xs mt-1', pm.color)}>{pm.label}</p>
+                        <div className="flex items-center gap-1 mt-1">
+                          <p className={clsx('text-xs', assigned.color)}>{assigned.label}</p>
+                          {t.assignedPriority && !isCorrect && (
+                            <span className="text-xs text-amber-400/70" title={`Expected: ${PRIORITY_META[meta?.priority]?.label}`}>≠</span>
+                          )}
+                          {t.assignedPriority && isCorrect && (
+                            <span className="text-xs text-emerald-400/70">✓</span>
+                          )}
+                        </div>
                       </button>
                     )
                   })}

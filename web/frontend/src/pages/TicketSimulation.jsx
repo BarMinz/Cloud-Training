@@ -12,6 +12,7 @@ function initTickets() {
     messages: [...t.messages],
     followUpIndex: 0,
     status: 'open',
+    assignedPriority: null,
   }))
 }
 
@@ -51,7 +52,11 @@ export default function TicketSimulation() {
   }, [storageKey])
 
   const active = tickets?.find((t) => t.id === activeId)
-  const pm = active ? PRIORITY_META[active.priority] : null
+  const pm = active ? PRIORITY_META[active.assignedPriority ?? 'unassigned'] : null
+
+  const setPriority = (ticketId, priority) => {
+    setTickets((prev) => prev.map((t) => t.id === ticketId ? { ...t, assignedPriority: priority } : t))
+  }
 
   // Persist to localStorage and backend on every ticket change (skip while still loading)
   useEffect(() => {
@@ -122,6 +127,7 @@ export default function TicketSimulation() {
   const canResolve =
     active &&
     active.status !== 'resolved' &&
+    active.assignedPriority !== null &&
     active.messages.length > 1 &&
     active.followUpIndex >= active.followUps.length
 
@@ -149,11 +155,20 @@ export default function TicketSimulation() {
           </p>
           <div className="grid grid-cols-2 gap-3 mb-6">
             {tickets.map((t) => {
-              const p = PRIORITY_META[t.priority]
+              const assigned = PRIORITY_META[t.assignedPriority ?? 'unassigned']
+              const correct = PRIORITY_META[t.priority]
+              const isCorrect = t.assignedPriority === t.priority
               return (
-                <div key={t.id} className={clsx('rounded-xl p-3 border text-left', p.bg, p.border)}>
-                  <p className={clsx('text-xs font-semibold', p.color)}>{p.label}</p>
-                  <p className="text-xs text-slate-300 mt-0.5 leading-tight truncate">{t.subject}</p>
+                <div key={t.id} className={clsx('rounded-xl p-3 border text-left', assigned.bg, assigned.border)}>
+                  <div className="flex items-center justify-between gap-1 mb-0.5">
+                    <p className={clsx('text-xs font-semibold', assigned.color)}>{assigned.label}</p>
+                    {t.assignedPriority && (
+                      isCorrect
+                        ? <span className="text-xs text-emerald-400">✓</span>
+                        : <span className="text-xs text-amber-400" title={`Expected: ${correct.label}`}>≠ {correct.label}</span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-300 leading-tight truncate">{t.subject}</p>
                   <p className="text-xs text-emerald-400 mt-1">✓ Resolved</p>
                 </div>
               )
@@ -204,7 +219,7 @@ export default function TicketSimulation() {
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">All Tickets</p>
           </div>
           {tickets.map((t) => {
-            const p = PRIORITY_META[t.priority]
+            const p = PRIORITY_META[t.assignedPriority ?? 'unassigned']
             const isActive = t.id === activeId
             return (
               <button
@@ -261,6 +276,30 @@ export default function TicketSimulation() {
                   <Clock className="w-3.5 h-3.5" />
                   {active.createdAt}
                 </div>
+              </div>
+
+              {/* Priority picker */}
+              <div className="flex items-center gap-2 mt-3 flex-wrap">
+                <span className="text-xs text-slate-500 shrink-0">Priority:</span>
+                {['critical', 'high', 'medium', 'low'].map((key) => {
+                  const meta = PRIORITY_META[key]
+                  const selected = active.assignedPriority === key
+                  return (
+                    <button
+                      key={key}
+                      disabled={readOnly || active.status === 'resolved'}
+                      onClick={() => setPriority(active.id, key)}
+                      className={clsx(
+                        'text-xs px-2.5 py-1 rounded-md border transition-all font-medium',
+                        selected
+                          ? `${meta.bg} ${meta.border} ${meta.color}`
+                          : 'bg-white/3 border-white/10 text-slate-500 hover:border-white/20 hover:text-slate-300 disabled:cursor-default disabled:hover:border-white/10 disabled:hover:text-slate-500'
+                      )}
+                    >
+                      {meta.label}
+                    </button>
+                  )
+                })}
               </div>
             </div>
 
@@ -322,6 +361,13 @@ export default function TicketSimulation() {
                 <div className="flex items-center gap-2 justify-center text-xs text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-3">
                   <AlertCircle className="w-4 h-4" />
                   The customer appears satisfied — you can resolve this ticket
+                </div>
+              )}
+
+              {!canResolve && !active.assignedPriority && active.messages.length > 1 && active.followUpIndex >= active.followUps.length && !readOnly && active.status !== 'resolved' && (
+                <div className="flex items-center gap-2 justify-center text-xs text-slate-400 bg-white/3 border border-white/10 rounded-xl px-4 py-3">
+                  <AlertCircle className="w-4 h-4" />
+                  Assign a priority to this ticket before resolving
                 </div>
               )}
             </div>

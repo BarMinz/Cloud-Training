@@ -78,8 +78,9 @@ export const SIMULATION_TICKETS = [
 ]
 
 export const PRIORITY_META = {
-  critical: { label: "Critical", color: "text-red-400",    bg: "bg-red-500/15",    border: "border-red-500/30",    dot: "bg-red-500"    },
-  high:     { label: "High",     color: "text-orange-400", bg: "bg-orange-500/15", border: "border-orange-500/30", dot: "bg-orange-500" },
-  medium:   { label: "Medium",   color: "text-amber-400",  bg: "bg-amber-500/15",  border: "border-amber-500/30",  dot: "bg-amber-400"  },
-  low:      { label: "Low",      color: "text-sky-400",    bg: "bg-sky-500/15",    border: "border-sky-500/30",    dot: "bg-sky-400"    },
+  unassigned: { label: "Unassigned", color: "text-slate-500", bg: "bg-slate-500/10", border: "border-slate-500/20", dot: "bg-slate-600" },
+  critical:   { label: "Critical",   color: "text-red-400",    bg: "bg-red-500/15",    border: "border-red-500/30",    dot: "bg-red-500"    },
+  high:       { label: "High",       color: "text-orange-400", bg: "bg-orange-500/15", border: "border-orange-500/30", dot: "bg-orange-500" },
+  medium:     { label: "Medium",     color: "text-amber-400",  bg: "bg-amber-500/15",  border: "border-amber-500/30",  dot: "bg-amber-400"  },
+  low:        { label: "Low",        color: "text-sky-400",    bg: "bg-sky-500/15",    border: "border-sky-500/30",    dot: "bg-sky-400"    },
 }
