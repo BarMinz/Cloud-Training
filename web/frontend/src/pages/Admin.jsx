@@ -218,8 +218,11 @@ export default function Admin() {
                 {/* Row */}
                 <div className="flex items-center gap-4 p-4">
                   {/* Avatar */}
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand-500 to-violet-600 flex items-center justify-center text-sm font-bold text-white shrink-0">
-                    {user.username[0].toUpperCase()}
+                  <div className="w-9 h-9 rounded-full overflow-hidden bg-gradient-to-br from-brand-500 to-violet-600 flex items-center justify-center text-sm font-bold text-white shrink-0">
+                    {user.avatar
+                      ? <img src={user.avatar} alt={user.username} className="w-full h-full object-cover" />
+                      : user.username[0].toUpperCase()
+                    }
                   </div>
 
                   {/* Info */}

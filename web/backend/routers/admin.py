@@ -18,6 +18,7 @@ class UserSummary(BaseModel):
     username: str
     email: str
     role: str
+    avatar: Optional[str] = None
     created_at: Optional[datetime]
     completed_phases: int
     in_progress_phases: int
@@ -77,6 +78,7 @@ def list_users(
             username=user.username,
             email=user.email,
             role=user.role,
+            avatar=user.avatar,
             created_at=user.created_at,
             completed_phases=completed,
             in_progress_phases=in_progress,
