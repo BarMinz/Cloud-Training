@@ -101,7 +101,7 @@ export default function Admin() {
 
   const openReview = (userId, username, phase, progress) => {
     setPhaseReview({ userId, username, phase, progress })
-    setReviewForm({ grade: progress.grade || null, feedback: progress.feedback || '', saving: false, saved: false })
+    setReviewForm({ grade: progress.grade || null, feedback: progress.feedback || '', saving: false, saved: false, editing: !progress.grade })
   }
 
   const submitReview = async () => {
@@ -112,7 +112,7 @@ export default function Admin() {
         grade: reviewForm.grade,
         feedback: reviewForm.feedback,
       })
-      setReviewForm((f) => ({ ...f, saving: false, saved: true }))
+      setReviewForm((f) => ({ ...f, saving: false, saved: true, editing: false }))
       // Update cached user detail so Review badge refreshes without reload
       setUserDetail((d) => {
         const prev = d[phaseReview.userId]
@@ -129,7 +129,8 @@ export default function Admin() {
           },
         }
       })
-      setPhaseReview((r) => r ? { ...r, progress: { ...r.progress, grade: reviewForm.grade, feedback: reviewForm.feedback } } : r)
+      const reviewedAt = new Date().toISOString()
+      setPhaseReview((r) => r ? { ...r, progress: { ...r.progress, grade: reviewForm.grade, feedback: reviewForm.feedback, reviewed_at: reviewedAt } } : r)
     } catch (err) {
       alert(err.message)
       setReviewForm((f) => ({ ...f, saving: false }))
@@ -446,13 +447,50 @@ export default function Admin() {
 
                 {/* ── Grade & Feedback ── */}
                 <div className={clsx('rounded-xl border p-4 space-y-4', canGrade ? 'border-white/10 bg-surface-3/50' : 'border-white/5 bg-surface-3/20')}>
-                  <p className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Grade & Feedback</p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Grade & Feedback</p>
+                    {canGrade && !reviewForm.editing && (
+                      <button
+                        onClick={() => setReviewForm((f) => ({ ...f, editing: true, saved: false }))}
+                        className="text-xs text-brand-400 hover:text-brand-300 transition-colors"
+                      >
+                        Edit Review
+                      </button>
+                    )}
+                  </div>
 
                   {!canGrade && (
                     <p className="text-xs text-slate-500 italic">Phase must be completed before it can be graded.</p>
                   )}
 
-                  {canGrade && (
+                  {/* Read mode — existing review */}
+                  {canGrade && !reviewForm.editing && (
+                    <div className="space-y-3">
+                      <div className={clsx(
+                        'inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold border',
+                        reviewForm.grade === 'passed'
+                          ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'
+                          : 'bg-red-500/20 border-red-500/40 text-red-300'
+                      )}>
+                        {reviewForm.grade === 'passed' ? '✓ Passed' : '✗ Not Passed'}
+                      </div>
+                      {reviewForm.feedback ? (
+                        <pre className="text-sm text-slate-300 bg-surface-3 border border-white/8 rounded-xl px-4 py-3 whitespace-pre-wrap font-mono leading-relaxed max-h-36 overflow-y-auto">
+                          {reviewForm.feedback}
+                        </pre>
+                      ) : (
+                        <p className="text-xs text-slate-600 italic">No feedback written.</p>
+                      )}
+                      {progress.reviewed_at && (
+                        <p className="text-xs text-slate-600 flex items-center gap-1">
+                          <Clock className="w-3 h-3" /> Reviewed {new Date(progress.reviewed_at).toLocaleString()}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Edit mode — grade form */}
+                  {canGrade && reviewForm.editing && (
                     <>
                       {/* Grade buttons */}
                       <div className="flex gap-3">
@@ -490,10 +528,15 @@ export default function Admin() {
                       />
 
                       {/* Submit */}
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs text-slate-600">
-                          {progress.grade && `Last graded: ${progress.grade === 'passed' ? '✓ Passed' : '✗ Not Passed'}`}
-                        </p>
+                      <div className="flex items-center justify-end gap-3">
+                        {progress.grade && (
+                          <button
+                            onClick={() => setReviewForm((f) => ({ ...f, editing: false, grade: progress.grade, feedback: progress.feedback || '' }))}
+                            className="text-xs text-slate-500 hover:text-slate-300 transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        )}
                         <button
                           onClick={submitReview}
                           disabled={!reviewForm.grade || reviewForm.saving}
@@ -508,7 +551,7 @@ export default function Admin() {
                             ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</>
                             : reviewForm.saved
                             ? <><CheckCircle2 className="w-4 h-4" /> Saved</>
-                            : 'Submit Review'}
+                            : progress.grade ? 'Update Review' : 'Submit Review'}
                         </button>
                       </div>
                     </>

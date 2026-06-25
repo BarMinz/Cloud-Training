@@ -104,6 +104,10 @@ def get_user(
                 notes=record.notes or "",
                 started_at=record.started_at,
                 completed_at=record.completed_at,
+                grade=record.grade,
+                feedback=record.feedback,
+                reviewed_by=record.reviewed_by,
+                reviewed_at=record.reviewed_at,
             ))
         else:
             progress.append(ProgressEntry(phase_id=phase_id, status="not_started", notes="", started_at=None, completed_at=None))
