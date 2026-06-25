@@ -20,6 +20,11 @@ export default function Dashboard() {
 
   const getProgress = (phaseId) => progress.find((p) => p.phase_id === phaseId)
 
+  const isLocked = (phaseId) => {
+    if (phaseId === 1) return false
+    return getProgress(phaseId - 1)?.status !== 'completed'
+  }
+
   const completed   = progress.filter((p) => p.status === 'completed').length
   const inProgress  = progress.filter((p) => p.status === 'in_progress').length
   const notStarted  = PHASES.length - completed - inProgress
@@ -99,6 +104,7 @@ export default function Dashboard() {
               key={phase.id}
               phase={phase}
               progress={getProgress(phase.id)}
+              locked={isLocked(phase.id)}
               index={i}
             />
           ))}

@@ -4,7 +4,7 @@ import { api } from '../api/client'
 import { PHASES, DIFFICULTY_COLORS, STATUS_META } from '../data/phases'
 import {
   ArrowLeft, CheckCircle2, Circle, Clock, Target, Lightbulb,
-  ChevronRight, Loader2, Save
+  ChevronRight, Loader2, Save, MonitorPlay, Lock, MessageSquare
 } from 'lucide-react'
 import clsx from 'clsx'
 
@@ -15,6 +15,7 @@ export default function PhaseDetail() {
   const phase = PHASES.find((p) => p.id === phaseId)
 
   const [progress, setProgress] = useState(null)
+  const [prevProgress, setPrevProgress] = useState(null)
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -24,7 +25,9 @@ export default function PhaseDetail() {
     api.get('/progress/')
       .then((all) => {
         const p = all.find((x) => x.phase_id === phaseId)
+        const prev = phaseId > 1 ? all.find((x) => x.phase_id === phaseId - 1) : null
         setProgress(p)
+        setPrevProgress(prev)
         setNotes(p?.notes || '')
       })
       .catch(console.error)
@@ -38,6 +41,7 @@ export default function PhaseDetail() {
   )
 
   const status = progress?.status || 'not_started'
+  const isLocked = phaseId > 1 && prevProgress?.status !== 'completed'
   const sm = STATUS_META[status]
   const dc = DIFFICULTY_COLORS[phase.difficulty]
 
@@ -102,27 +106,60 @@ export default function PhaseDetail() {
 
         <p className="mt-4 text-slate-300 leading-relaxed">{phase.description}</p>
 
+        {/* Phase 1 simulation launcher */}
+        {phaseId === 1 && status !== 'not_started' && (
+          <div className="mt-5 p-4 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold text-sky-300">Interactive Simulation</p>
+              <p className="text-xs text-slate-400 mt-0.5">Practice with a live Kayako-style support queue — 4 tickets, real customer conversations.</p>
+            </div>
+            <Link to="/phase/1/simulation" className="shrink-0 bg-sky-600 hover:bg-sky-500 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-all flex items-center gap-2">
+              <MonitorPlay className="w-4 h-4" /> Launch
+            </Link>
+          </div>
+        )}
+
+        {/* Phase 2 LAMP lab launcher — hidden once phase is submitted */}
+        {phaseId === 2 && status === 'in_progress' && (
+          <div className="mt-5 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold text-emerald-300">Interactive LAMP Lab</p>
+              <p className="text-xs text-slate-400 mt-0.5">A fresh Ubuntu 24.04 container is provisioned just for you — build your LAMP stack directly in the browser.</p>
+            </div>
+            <Link to="/phase/2/lab" className="shrink-0 bg-emerald-700 hover:bg-emerald-600 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-all flex items-center gap-2">
+              <MonitorPlay className="w-4 h-4" /> Open Terminal
+            </Link>
+          </div>
+        )}
+
         {/* Status actions */}
-        <div className="flex gap-2 mt-5 flex-wrap">
-          {status === 'not_started' && (
-            <button onClick={() => updateStatus('in_progress')} disabled={saving} className="btn-primary flex items-center gap-2">
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Target className="w-4 h-4" />}
-              Start Phase
-            </button>
-          )}
-          {status === 'in_progress' && (
+        <div className="flex gap-2 mt-5 flex-wrap items-center">
+          {isLocked ? (
+            <div className="flex items-center gap-2 text-sm text-slate-500 bg-slate-500/10 border border-slate-500/20 rounded-lg px-4 py-2.5">
+              <Lock className="w-4 h-4" />
+              Complete Phase {phaseId - 1} to unlock this phase
+            </div>
+          ) : (
             <>
-              <button onClick={() => updateStatus('completed')} disabled={saving} className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-5 py-2.5 rounded-lg transition-all flex items-center gap-2 shadow-lg shadow-emerald-900/30">
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                Mark Complete
-              </button>
-              <button onClick={() => updateStatus('not_started')} className="btn-ghost text-sm">Reset</button>
+              {status === 'not_started' && (
+                <button onClick={() => updateStatus('in_progress')} disabled={saving} className="btn-primary flex items-center gap-2">
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Target className="w-4 h-4" />}
+                  Start Phase
+                </button>
+              )}
+              {status === 'in_progress' && (
+                <button onClick={() => updateStatus('completed')} disabled={saving} className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-5 py-2.5 rounded-lg transition-all flex items-center gap-2 shadow-lg shadow-emerald-900/30">
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                  Mark Complete
+                </button>
+              )}
+              {status === 'completed' && (
+                <p className="text-xs text-slate-500 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                  Phase completed — contact an admin to reset
+                </p>
+              )}
             </>
-          )}
-          {status === 'completed' && (
-            <button onClick={() => updateStatus('in_progress')} className="btn-ghost flex items-center gap-2 text-sm">
-              <Circle className="w-4 h-4" /> Reopen Phase
-            </button>
           )}
         </div>
       </div>
@@ -212,6 +249,37 @@ export default function PhaseDetail() {
                   </div>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* Admin review */}
+          {progress?.grade && (
+            <div className={clsx(
+              'card p-5 border',
+              progress.grade === 'passed'
+                ? 'border-emerald-500/30 bg-emerald-500/5'
+                : 'border-red-500/30 bg-red-500/5'
+            )}>
+              <h2 className="font-semibold text-slate-200 mb-3 flex items-center gap-2 text-sm">
+                <MessageSquare className={clsx('w-4 h-4', progress.grade === 'passed' ? 'text-emerald-400' : 'text-red-400')} />
+                Admin Review
+              </h2>
+              <p className={clsx(
+                'text-sm font-semibold mb-2',
+                progress.grade === 'passed' ? 'text-emerald-400' : 'text-red-400'
+              )}>
+                {progress.grade === 'passed' ? '✓ Passed' : '✗ Not Passed'}
+              </p>
+              {progress.feedback && (
+                <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">
+                  {progress.feedback}
+                </p>
+              )}
+              {progress.reviewed_at && (
+                <p className="text-xs text-slate-600 mt-2">
+                  {new Date(progress.reviewed_at).toLocaleDateString()}
+                </p>
+              )}
             </div>
           )}
 
