@@ -63,6 +63,50 @@ def _container_bound_ports(name: str) -> list[int]:
     return sorted(ports)
 
 
+def _write_motd(name: str, bound_ports: list[int]) -> None:
+    C, G, Y, W, R = '\033[1;36m', '\033[1;32m', '\033[1;33m', '\033[0m', '\033[1;31m'
+    DIV = f'{C}{"─" * 54}{W}'
+
+    if bound_ports:
+        port_lines = ''
+        for p in bound_ports:
+            scheme = 'https' if p == 443 else 'http'
+            suffix = '' if p in (80, 443) else f':{p}'
+            port_lines += f'  Port {p:<5}  {G}→{W}  {G}{scheme}://{SECONDARY_IP}{suffix}{W}\n'
+
+        motd = (
+            f'\n{DIV}\n'
+            f'{C}         Welcome to your LAMP Lab 🌐{W}\n'
+            f'{DIV}\n\n'
+            f' Your lab server is publicly accessible at:\n\n'
+            f'  IP address  {Y}→{W}  {Y}{SECONDARY_IP}{W}\n'
+            f'{port_lines}\n'
+            f' Once Apache is running, open the HTTP URL in your browser to test.\n'
+            f' {C}Tip:{W} start with  apt update && apt install -y apache2\n\n'
+            f'{DIV}\n'
+        )
+    else:
+        motd = (
+            f'\n{DIV}\n'
+            f'{C}         Welcome to your LAMP Lab 🌐{W}\n'
+            f'{DIV}\n\n'
+            f' {R}⚠  Public ports are currently in use by another lab session.{W}\n'
+            f'    Test your site inside the container using curl.\n\n'
+            f' {C}Tip:{W} start with  apt update && apt install -y apache2\n\n'
+            f'{DIV}\n'
+        )
+
+    subprocess.run(
+        ['docker', 'exec', '-i', name, 'bash', '-c', 'cat > /etc/motd'],
+        input=motd, capture_output=True, text=True, timeout=10,
+    )
+    subprocess.run(
+        ['docker', 'exec', name, 'bash', '-c',
+         r'grep -q "cat /etc/motd" /root/.bashrc || printf "\n[ -f /etc/motd ] && cat /etc/motd\n" >> /root/.bashrc'],
+        capture_output=True, text=True, timeout=10,
+    )
+
+
 def ensure_container_running(name: str) -> bool:
     status = get_container_status(name)
     if status == 'running':
@@ -70,16 +114,20 @@ def ensure_container_running(name: str) -> bool:
     if status in ('exited', 'created', 'paused'):
         return _run(['docker', 'start', name]).returncode == 0
     if status == 'not_found':
+        free_ports = _free_lab_ports()
         cmd = [
             'docker', 'run', '-d', '--name', name,
             '--hostname', 'lamp-server',
             '-e', 'TERM=xterm-256color',
             '--memory', '512m',
         ]
-        for port in _free_lab_ports():
+        for port in free_ports:
             cmd += ['-p', f'{SECONDARY_IP}:{port}:{port}']
         cmd += ['ubuntu:24.04', 'sleep', 'infinity']
-        return _run(cmd, timeout=30).returncode == 0
+        ok = _run(cmd, timeout=30).returncode == 0
+        if ok:
+            _write_motd(name, free_ports)
+        return ok
     return False
 
 
