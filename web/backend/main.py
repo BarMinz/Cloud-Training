@@ -10,11 +10,11 @@ run_migrations(engine)
 
 app = FastAPI(title="Cloud Training API", docs_url=None, redoc_url=None)
 
-app.add_middleware(TrustedHostMiddleware, allowed_hosts=["79.108.163.7", "localhost", "127.0.0.1"])
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=["79.108.163.7", "cloud-training.online", "localhost", "127.0.0.1"])
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://79.108.163.7", "http://localhost:5173"],
+    allow_origins=["https://cloud-training.online", "http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
