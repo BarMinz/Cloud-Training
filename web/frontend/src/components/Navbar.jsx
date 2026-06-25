@@ -44,13 +44,18 @@ export default function Navbar() {
 
       {/* User */}
       <div className="flex items-center gap-3">
-        <div className="text-right hidden sm:block">
-          <p className="text-sm font-medium text-slate-200 leading-none">{user?.username}</p>
-          <p className="text-xs text-slate-500 mt-0.5 capitalize">{user?.role}</p>
-        </div>
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-500 to-violet-600 flex items-center justify-center text-sm font-bold text-white shrink-0">
-          {user?.username?.[0]?.toUpperCase()}
-        </div>
+        <Link to="/profile" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+          <div className="text-right hidden sm:block">
+            <p className="text-sm font-medium text-slate-200 leading-none">{user?.username}</p>
+            <p className="text-xs text-slate-500 mt-0.5 capitalize">{user?.role?.replace('_', ' ')}</p>
+          </div>
+          <div className="w-8 h-8 rounded-full overflow-hidden bg-gradient-to-br from-brand-500 to-violet-600 flex items-center justify-center text-sm font-bold text-white shrink-0">
+            {user?.avatar
+              ? <img src={user.avatar} alt={user.username} className="w-full h-full object-cover" />
+              : user?.username?.[0]?.toUpperCase()
+            }
+          </div>
+        </Link>
         <button onClick={handleLogout} className="btn-ghost p-2 rounded-lg" title="Log out">
           <LogOut className="w-4 h-4" />
         </button>

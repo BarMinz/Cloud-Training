@@ -8,6 +8,7 @@ import Admin from './pages/Admin'
 import TicketSimulation from './pages/TicketSimulation'
 import LampLab from './pages/LampLab'
 import AdminLampTerminal from './pages/AdminLampTerminal'
+import Profile from './pages/Profile'
 import { Loader2 } from 'lucide-react'
 
 function ProtectedLayout() {
@@ -51,6 +52,7 @@ export default function App() {
           </Route>
           <Route element={<ProtectedLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/profile" element={<Profile />} />
             <Route path="/phase/:id" element={<PhaseDetail />} />
             <Route path="/phase/1/simulation" element={<TicketSimulation />} />
             <Route path="/phase/2/lab" element={<LampLab />} />

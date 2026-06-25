@@ -25,6 +25,7 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     password_hash = Column(String, nullable=False)
     role = Column(Enum(UserRole), default=UserRole.employee, nullable=False)
+    avatar = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     progress = relationship("PhaseProgress", foreign_keys="[PhaseProgress.user_id]", back_populates="user", cascade="all, delete-orphan")

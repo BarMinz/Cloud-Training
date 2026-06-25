@@ -9,6 +9,12 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def run_migrations(engine):
     with engine.connect() as conn:
+        result = conn.execute(text("PRAGMA table_info(users)"))
+        user_cols = {row[1] for row in result.fetchall()}
+        if "avatar" not in user_cols:
+            conn.execute(text("ALTER TABLE users ADD COLUMN avatar TEXT"))
+            conn.commit()
+
         result = conn.execute(text("PRAGMA table_info(phase_progress)"))
         cols = {row[1] for row in result.fetchall()}
         if "updated_at" not in cols:
