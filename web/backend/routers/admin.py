@@ -1,12 +1,17 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
+import os, time
 from database import get_db
 import models
 import auth as auth_utils
 from routers.containers import container_name, _run
+
+AVATAR_DIR = "/var/www/cloud-training/avatars"
+ALLOWED_MIME = {"image/jpeg", "image/png", "image/gif", "image/webp"}
+MAX_AVATAR_BYTES = 2 * 1024 * 1024
 
 TOTAL_PHASES = 10
 
@@ -61,6 +66,13 @@ class UserDetail(BaseModel):
 
 class RoleUpdate(BaseModel):
     role: str
+
+
+class UserEdit(BaseModel):
+    username: Optional[str] = None
+    email: Optional[str] = None
+    role: Optional[str] = None
+    new_password: Optional[str] = None
 
 
 @router.get("/users", response_model=list[UserSummary])
@@ -146,6 +158,82 @@ def update_role(
         raise HTTPException(status_code=400, detail="Invalid role")
     db.commit()
     return {"ok": True}
+
+
+@router.patch("/users/{user_id}")
+def edit_user(
+    user_id: int,
+    body: UserEdit,
+    current_admin: models.User = Depends(auth_utils.require_admin),
+    db: Session = Depends(get_db),
+):
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if body.username is not None and body.username != user.username:
+        if db.query(models.User).filter(models.User.username == body.username, models.User.id != user_id).first():
+            raise HTTPException(status_code=400, detail="Username already taken")
+        user.username = body.username
+
+    if body.email is not None and body.email != user.email:
+        if db.query(models.User).filter(models.User.email == body.email, models.User.id != user_id).first():
+            raise HTTPException(status_code=400, detail="Email already in use")
+        user.email = body.email
+
+    if body.role is not None and body.role != user.role:
+        if current_admin.id == user_id:
+            raise HTTPException(status_code=400, detail="Cannot change your own role")
+        if user.role == models.UserRole.main_admin:
+            raise HTTPException(status_code=400, detail="Cannot change the role of the main admin")
+        if body.role == models.UserRole.main_admin:
+            raise HTTPException(status_code=400, detail="Cannot assign the main admin role")
+        try:
+            user.role = models.UserRole(body.role)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid role")
+
+    if body.new_password is not None and body.new_password != "":
+        if len(body.new_password) < 6:
+            raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+        user.password_hash = auth_utils.hash_password(body.new_password)
+
+    db.commit()
+    return {"ok": True, "username": user.username, "email": user.email, "role": user.role, "avatar": user.avatar}
+
+
+@router.post("/users/{user_id}/avatar", status_code=200)
+async def admin_upload_avatar(
+    user_id: int,
+    file: UploadFile = File(...),
+    _: models.User = Depends(auth_utils.require_admin),
+    db: Session = Depends(get_db),
+):
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if file.content_type not in ALLOWED_MIME:
+        raise HTTPException(status_code=400, detail="Only JPEG, PNG, GIF, or WebP images are allowed")
+
+    contents = await file.read()
+    if len(contents) > MAX_AVATAR_BYTES:
+        raise HTTPException(status_code=400, detail="File too large — maximum 2 MB")
+
+    ext = file.filename.rsplit(".", 1)[-1].lower() if file.filename and "." in file.filename else "jpg"
+    filename = f"{user_id}_{int(time.time())}.{ext}"
+
+    os.makedirs(AVATAR_DIR, exist_ok=True)
+    if user.avatar:
+        old_path = os.path.join(AVATAR_DIR, os.path.basename(user.avatar))
+        if os.path.exists(old_path):
+            os.remove(old_path)
+
+    with open(os.path.join(AVATAR_DIR, filename), "wb") as f:
+        f.write(contents)
+
+    user.avatar = f"/avatars/{filename}"
+    db.commit()
+    return {"avatar": user.avatar}
 
 
 @router.delete("/users/{user_id}", status_code=204)
