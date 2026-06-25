@@ -3,6 +3,7 @@ import fcntl
 import json
 import os
 import pty
+import socket
 import struct
 import subprocess
 import termios
@@ -14,6 +15,9 @@ import auth as auth_utils
 import models
 
 router = APIRouter(prefix="/api/containers", tags=["containers"])
+
+SECONDARY_IP = "79.108.163.9"
+LAB_PORTS = (80, 443)
 
 
 def container_name(user_id: int) -> str:
@@ -31,6 +35,34 @@ def get_container_status(name: str) -> str:
     return 'not_found'
 
 
+def _free_lab_ports() -> list[int]:
+    """Return which of LAB_PORTS are not currently bound on SECONDARY_IP."""
+    free = []
+    for port in LAB_PORTS:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 0)
+            try:
+                s.bind((SECONDARY_IP, port))
+                free.append(port)
+            except OSError:
+                pass
+    return free
+
+
+def _container_bound_ports(name: str) -> list[int]:
+    """Return port numbers currently mapped to SECONDARY_IP for the given container."""
+    result = _run(['docker', 'port', name])
+    ports = []
+    for line in result.stdout.splitlines():
+        # e.g. "80/tcp -> 79.108.163.9:80"
+        if SECONDARY_IP in line:
+            try:
+                ports.append(int(line.split('/')[0]))
+            except (ValueError, IndexError):
+                pass
+    return sorted(ports)
+
+
 def ensure_container_running(name: str) -> bool:
     status = get_container_status(name)
     if status == 'running':
@@ -38,15 +70,16 @@ def ensure_container_running(name: str) -> bool:
     if status in ('exited', 'created', 'paused'):
         return _run(['docker', 'start', name]).returncode == 0
     if status == 'not_found':
-        result = _run([
+        cmd = [
             'docker', 'run', '-d', '--name', name,
             '--hostname', 'lamp-server',
             '-e', 'TERM=xterm-256color',
             '--memory', '512m',
-            'ubuntu:24.04',
-            'sleep', 'infinity',
-        ], timeout=30)
-        return result.returncode == 0
+        ]
+        for port in _free_lab_ports():
+            cmd += ['-p', f'{SECONDARY_IP}:{port}:{port}']
+        cmd += ['ubuntu:24.04', 'sleep', 'infinity']
+        return _run(cmd, timeout=30).returncode == 0
     return False
 
 
@@ -55,7 +88,13 @@ def start_lamp_container(current_user: models.User = Depends(auth_utils.get_curr
     name = container_name(current_user.id)
     if not ensure_container_running(name):
         raise HTTPException(status_code=500, detail="Failed to start container")
-    return {"status": get_container_status(name), "container": name}
+    bound = _container_bound_ports(name)
+    return {
+        "status": get_container_status(name),
+        "container": name,
+        "public_ip": SECONDARY_IP if bound else None,
+        "bound_ports": bound,
+    }
 
 
 @router.get("/lamp")
