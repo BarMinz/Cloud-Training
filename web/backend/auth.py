@@ -51,6 +51,11 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
 
 
 def require_admin(current_user: models.User = Depends(get_current_user)) -> models.User:
-    if current_user.role != models.UserRole.admin:
+    if current_user.role not in (models.UserRole.admin, models.UserRole.main_admin):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
     return current_user
+
+
+def decode_token(token: str) -> dict:
+    """Decode and validate a JWT, returning the payload. Raises JWTError on failure."""
+    return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
