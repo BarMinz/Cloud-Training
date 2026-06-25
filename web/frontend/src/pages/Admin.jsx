@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../api/client'
+import { useAuth } from '../contexts/AuthContext'
 import { PHASES, STATUS_META } from '../data/phases'
 import { SIMULATION_TICKETS, PRIORITY_META } from '../data/simulationTickets'
 import ProgressRing from '../components/ProgressRing'
@@ -14,6 +15,7 @@ import clsx from 'clsx'
 
 export default function Admin() {
   const navigate = useNavigate()
+  const { user: currentUser } = useAuth()
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -258,15 +260,17 @@ export default function Admin() {
                       <span className="text-xs text-amber-500/60 hidden sm:block px-2">Protected</span>
                     ) : (
                       <>
-                        <select
-                          value={user.role}
-                          onChange={(e) => changeRole(user.id, e.target.value)}
-                          disabled={!!actionLoading}
-                          className="bg-surface-3 border border-white/10 text-xs text-slate-300 rounded-lg px-2 py-1.5 focus:outline-none focus:border-brand-500 hidden sm:block"
-                        >
-                          <option value="employee">employee</option>
-                          <option value="admin">admin</option>
-                        </select>
+                        <div title={currentUser?.id === user.id ? "You can't change your own role" : ''}>
+                          <select
+                            value={user.role}
+                            onChange={(e) => changeRole(user.id, e.target.value)}
+                            disabled={!!actionLoading || currentUser?.id === user.id}
+                            className="bg-surface-3 border border-white/10 text-xs text-slate-300 rounded-lg px-2 py-1.5 focus:outline-none focus:border-brand-500 hidden sm:block disabled:opacity-40 disabled:cursor-not-allowed"
+                          >
+                            <option value="employee">employee</option>
+                            <option value="admin">admin</option>
+                          </select>
+                        </div>
 
                         <div title={user.role === 'admin' ? 'Demote to employee before deleting' : ''}>
                           <button
