@@ -26,9 +26,9 @@ def get_summary(
 
     total_completed = sum(
         sum(1 for p in u.progress if p.status == models.PhaseStatus.completed)
-        for u in users
+        for u in trainees
     )
-    avg_phases = round(total_completed / total, 1) if total else 0
+    avg_phases = round(total_completed / trainee_count, 1) if trainee_count else 0
 
     cutoff = datetime.utcnow() - timedelta(days=7)
     active = sum(
