@@ -127,7 +127,12 @@ export default function TicketSimulation() {
         setTickets((prev) =>
           prev.map((t) => {
             if (t.id !== activeId) return t
-            const followUpText = t.followUps[t.followUpIndex]
+            const lowerText = text.toLowerCase()
+            const branchKws = t.exchanges?.[t.followUpIndex]?.branchKeywords
+            const useBranch = branchKws?.some((kw) => lowerText.includes(kw))
+            const followUpText = useBranch
+              ? (t.exchanges[t.followUpIndex].branchFollowUp ?? t.followUps[t.followUpIndex])
+              : t.followUps[t.followUpIndex]
             let customerText = followUpText
             let hasRemark = false
             if (!polite && t.exchanges?.[t.followUpIndex]?.mannersRemark) {

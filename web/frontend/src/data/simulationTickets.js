@@ -110,8 +110,8 @@ export const SIMULATION_TICKETS = [
     ],
     followUps: [
       "All our servers are hosted on Kamatera. The main ones are web (185.84.140.10), DB (185.84.140.20), and app server (185.84.140.30). They were all working fine this morning. Since about an hour ago nobody can reach any of them from outside. In the Kamatera CWM portal the servers all show as 'Running' — but no external connections are going through.",
-      "One of our team members was adjusting the firewall settings in the CWM portal earlier today. I just went in and checked — the firewall is enabled on our account, but it looks like all the inbound rules were deleted by mistake. Nothing is being allowed through.",
-      "We re-added the rules — SSH (22), RDP (3389), HTTP (80), and HTTPS (443) for each server. Everything came back immediately. We've also exported the ruleset as a backup so this never happens again. Thank you for pointing us to the firewall! Resolved.",
+      "One of our team members was working on the network setup earlier. Looking at the CWM console right now — we have a standalone external firewall appliance and it's showing as Powered Off. Could that be causing everything to go down?",
+      "Yes please, go ahead and power it on!",
     ],
     exchanges: [
       {
@@ -134,12 +134,15 @@ export const SIMULATION_TICKETS = [
         hint: "The servers are running but unreachable from outside — this points to a network or firewall issue. Ask if anyone recently changed firewall or security settings in the Kamatera CWM portal.",
       },
       {
-        keywords: ["rule", "add", "restore", "create", "port", "allow", "permit", "ssh", "rdp", "http", "https", "443", "80", "22", "3389", "open", "enable", "inbound", "traffic", "firewall", "config", "re-add", "recreate", "fix", "recover"],
+        keywords: ["power", "turn on", "turn it", "power on", "enable", "start", "switch on", "would you like", "shall i", "should i", "can i", "want me to", "like me to", "may i", "boot", "spin up", "bring it", "bring up"],
+        // If trainee proactively powers it on themselves → different customer reply
+        branchKeywords: ["i turned", "i powered", "i switched", "turned it on", "powered it on", "switched it on", "have turned", "have powered", "already on", "it's back on", "back online", "done, please check", "done — please", "it is now on", "i've turned", "i've powered"],
+        branchFollowUp: "Oh it's already back! Everything came back immediately — all three servers are reachable again. You're an absolute lifesaver, thank you so much!",
         confusion: [
-          "All the inbound rules are gone — the list is completely empty. I can see where to add new rules in CWM but I have no idea what to put in. How do I fix this?",
-          "The firewall rules were all deleted. I'm looking at the CWM firewall page right now — what rules do I need to add back to get the servers reachable again?",
+          "The firewall is just sitting there as 'Powered Off' in the console. What should we do — can you do something from your end, or do I need to action this myself?",
+          "It's showing as off in CWM. Is there anything you can do, or should I be trying to power it back on from the console?",
         ],
-        hint: "All CWM firewall inbound rules were accidentally deleted. Guide the customer to recreate rules for SSH (22), RDP (3389), HTTP (80), and HTTPS (443) for each server.",
+        hint: "The standalone firewall is powered off. Either power it on yourself and let the customer know to check, or ask if they'd like you to do so.",
         mannersKeywords: CLOSING_KEYWORDS,
         mannersRemark: CLOSING_REMARK,
         mannersPosition: "after",
