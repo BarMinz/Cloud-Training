@@ -15,7 +15,6 @@ import models
 
 router = APIRouter(prefix="/api/containers", tags=["containers"])
 
-SECONDARY_IP = "79.108.163.9"
 DOMAIN = "cloud-training.online"
 LAB_UPSTREAMS_MAP = "/etc/nginx/lab-upstreams.map"
 
@@ -60,7 +59,7 @@ def _update_nginx_map(username: str, container_ip: str) -> None:
 def _write_motd(name: str, username: str = '') -> None:
     C, Y, W = '\033[1;36m', '\033[1;33m', '\033[0m'
     DIV = f'{C}{"─" * 54}{W}'
-    url = f'http://{username}.{DOMAIN}' if username else f'http://{SECONDARY_IP}'
+    url = f'http://{username}.{DOMAIN}' if username else f'http://{DOMAIN}'
 
     motd = (
         f'\n{DIV}\n'
