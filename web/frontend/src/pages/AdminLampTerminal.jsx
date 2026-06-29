@@ -70,21 +70,24 @@ export default function AdminLampTerminal() {
 
     if (termRef.current) {
       term.open(termRef.current)
-      fitAddon.fit()
     }
 
     xtermRef.current = term
 
-    const handleResize = () => {
+    const sendResize = () => {
       fitAddon.fit()
       if (wsRef.current?.readyState === WebSocket.OPEN) {
         wsRef.current.send(JSON.stringify({ type: 'resize', rows: term.rows, cols: term.cols }))
       }
     }
-    window.addEventListener('resize', handleResize)
+
+    document.fonts.ready.then(() => requestAnimationFrame(sendResize))
+
+    const ro = new ResizeObserver(() => requestAnimationFrame(sendResize))
+    if (termRef.current) ro.observe(termRef.current)
 
     return () => {
-      window.removeEventListener('resize', handleResize)
+      ro.disconnect()
       term.dispose()
     }
   }, [])
@@ -127,9 +130,11 @@ export default function AdminLampTerminal() {
       setWsConnected(true)
       setContainerStatus('running')
       term.clear()
-      fitAddon.fit()
-      ws.send(JSON.stringify({ type: 'resize', rows: term.rows, cols: term.cols }))
-      term.focus()
+      document.fonts.ready.then(() => {
+        fitAddon.fit()
+        ws.send(JSON.stringify({ type: 'resize', rows: term.rows, cols: term.cols }))
+        term.focus()
+      })
     }
 
     ws.onmessage = (evt) => {

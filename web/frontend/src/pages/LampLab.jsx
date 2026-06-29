@@ -70,7 +70,6 @@ export default function LampLab() {
 
     if (termRef.current) {
       term.open(termRef.current)
-      requestAnimationFrame(() => fitAddon.fit())
     }
 
     xtermRef.current = term
@@ -86,7 +85,10 @@ export default function LampLab() {
       }
     }
 
-    const ro = new ResizeObserver(sendResize)
+    // Wait for web fonts before measuring character dimensions
+    document.fonts.ready.then(() => requestAnimationFrame(sendResize))
+
+    const ro = new ResizeObserver(() => requestAnimationFrame(sendResize))
     if (termRef.current) ro.observe(termRef.current)
 
     return () => {
@@ -123,7 +125,7 @@ export default function LampLab() {
     ws.onopen = () => {
       setWsConnected(true)
       term.clear()
-      requestAnimationFrame(() => {
+      document.fonts.ready.then(() => {
         fitAddon.fit()
         ws.send(JSON.stringify({ type: 'resize', rows: term.rows, cols: term.cols }))
         term.focus()
