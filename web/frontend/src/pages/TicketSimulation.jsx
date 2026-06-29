@@ -495,7 +495,7 @@ export default function TicketSimulation() {
 
             {/* Reply box — hidden in read-only mode and for resolved tickets */}
             {!readOnly && active.status !== 'resolved' && (
-              <div className="border-t border-white/8 p-4 bg-surface-1 shrink-0">
+              <div className="border-t border-white/8 py-4 pl-4 pr-6 bg-surface-1 shrink-0">
                 <textarea
                   rows={3}
                   value={reply}
