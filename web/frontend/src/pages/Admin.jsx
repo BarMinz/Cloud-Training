@@ -8,7 +8,7 @@ import ProgressRing from '../components/ProgressRing'
 import {
   Users, Loader2, Trash2, ShieldCheck,
   Search, RefreshCw, Award, TrendingUp, Activity, RotateCcw,
-  MessageSquare, X, Clock, User, Terminal, Eye, CheckCircle2, ChevronRight, Target, Lightbulb, Pencil, Camera, Lock,
+  MessageSquare, X, Clock, User, Terminal, Eye, CheckCircle2, ChevronRight, Target, Lightbulb, Pencil, Camera, Lock, PowerOff,
 } from 'lucide-react'
 import { DIFFICULTY_COLORS } from '../data/phases'
 import clsx from 'clsx'
@@ -30,6 +30,9 @@ export default function Admin() {
   const [simViewerLoading, setSimViewerLoading] = useState(false)
   const [phaseReview, setPhaseReview] = useState(null)  // { userId, username, phase, progress } | null
   const [reviewForm, setReviewForm] = useState({ grade: null, feedback: '', saving: false, saved: false })
+
+  const [terminatingContainer, setTerminatingContainer] = useState(null) // userId
+  const [containerStatuses, setContainerStatuses] = useState({}) // { [userId]: string }
 
   const [editTarget, setEditTarget] = useState(null)
   const [editForm, setEditForm] = useState({ username: '', email: '', role: '', newPassword: '', saving: false, error: '' })
@@ -53,11 +56,19 @@ export default function Admin() {
   const toggleExpand = async (userId) => {
     if (expanded === userId) { setExpanded(null); return }
     setExpanded(userId)
-    if (!userDetail[userId]) {
+    let detail = userDetail[userId]
+    if (!detail) {
       try {
-        const detail = await api.get(`/admin/users/${userId}`)
+        detail = await api.get(`/admin/users/${userId}`)
         setUserDetail((d) => ({ ...d, [userId]: detail }))
-      } catch (err) { console.error(err) }
+      } catch (err) { console.error(err); return }
+    }
+    // Always fetch fresh container status for Phase 2 users
+    const phase2 = detail.progress?.find((p) => p.phase_id === 2)
+    if (phase2 && (phase2.status === 'in_progress' || phase2.status === 'completed')) {
+      api.get(`/containers/admin/${userId}/lamp`)
+        .then((r) => setContainerStatuses((s) => ({ ...s, [userId]: r.status })))
+        .catch(() => setContainerStatuses((s) => ({ ...s, [userId]: 'not_found' })))
     }
   }
 
@@ -395,13 +406,34 @@ export default function Admin() {
                                   <MessageSquare className="w-3 h-3" /> View Chats
                                 </button>
                               )}
-                              {p.phase_id === 2 && (p.status === 'in_progress' || p.status === 'completed') && (
-                                <button
-                                  onClick={() => navigate(`/admin/terminal/${user.id}`)}
-                                  className="mt-1.5 w-full flex items-center justify-center gap-1 text-xs text-emerald-400 hover:text-emerald-300 transition-colors"
-                                >
-                                  <Terminal className="w-3 h-3" /> View Terminal
-                                </button>
+                              {p.phase_id === 2 && (p.status === 'in_progress' || p.status === 'completed') && containerStatuses[user.id] === 'running' && (
+                                <>
+                                  <button
+                                    onClick={() => navigate(`/admin/terminal/${user.id}`)}
+                                    className="mt-1.5 w-full flex items-center justify-center gap-1 text-xs text-emerald-400 hover:text-emerald-300 transition-colors"
+                                  >
+                                    <Terminal className="w-3 h-3" /> View Terminal
+                                  </button>
+                                  <button
+                                    onClick={async () => {
+                                      if (!confirm(`Terminate ${user.username}'s LAMP container?`)) return
+                                      setTerminatingContainer(user.id)
+                                      try {
+                                        await api.delete(`/containers/admin/${user.id}/lamp`)
+                                        setContainerStatuses((s) => ({ ...s, [user.id]: 'not_found' }))
+                                      } catch (err) { alert(err.message) }
+                                      finally { setTerminatingContainer(null) }
+                                    }}
+                                    disabled={terminatingContainer === user.id}
+                                    className="mt-1 w-full flex items-center justify-center gap-1 text-xs text-red-400 hover:text-red-300 transition-colors disabled:opacity-50"
+                                  >
+                                    {terminatingContainer === user.id
+                                      ? <Loader2 className="w-3 h-3 animate-spin" />
+                                      : <PowerOff className="w-3 h-3" />
+                                    }
+                                    Terminate
+                                  </button>
+                                </>
                               )}
                               <button
                                 onClick={() => openReview(user.id, user.username, ph, p)}
