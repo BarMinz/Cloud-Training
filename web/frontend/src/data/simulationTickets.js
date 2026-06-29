@@ -25,11 +25,9 @@ export const SIMULATION_TICKETS = [
       },
     ],
     followUps: [
-      // Handles both: "ask for error details" AND "ask for server/credentials" paths
       "Sure — the server is vpn-kamatera-01 (IP: 185.84.141.50). As for credentials, I'd prefer to send them securely — what method do you recommend? Also, for more context: the VPN drops after about 10–15 minutes of idle time. We're using OpenVPN, and the error log shows 'TLS Error: TLS key negotiation failed to occur within 60 seconds' right before it disconnects.",
-      // Handles both: "one-time link / secure transfer" AND "check config for timeout" paths
-      "Got it, I'll use that to send the credentials securely. I also went ahead and checked the OpenVPN server config on the Kamatera VM — I can see a line that says 'inactive 600'. That's 10 minutes. Is that what's causing the drops? Should I change or remove it?",
-      "I commented out the 'inactive 600' line and added 'keepalive 10 120' to both the server and client configs, then restarted the OpenVPN service. The VPN has been stable for over an hour with no drops at all. Thank you! Resolved.",
+      "Got it, I'll use that to send the credentials securely — thank you!\n\nOne last thing, and this is purely a bonus question since you're still new to the team: based on what I've described, do you have any initial thoughts on what might be causing the drops? No pressure at all — we don't expect a full diagnosis at this stage. It's just a great learning exercise to think through!",
+      "Interesting thoughts — appreciate you giving it a go! We'll have a senior engineer dig into it from here. Thanks so much for your help today, really appreciate the quick response!",
     ],
     exchanges: [
       {
@@ -52,12 +50,13 @@ export const SIMULATION_TICKETS = [
         hint: "The customer gave you server details and mentioned idle drops with a TLS error. Either suggest a secure way to receive credentials (e.g. a one-time link), or ask them to check the OpenVPN server config for a timeout or keepalive setting.",
       },
       {
-        keywords: ["keepalive", "inactive", "config", "edit", "change", "remove", "comment", "add", "restart", "reload", "service", "openvpn", "apply", "update", "modify", "set", "value", "line", "fix", "directive", "disable"],
+        // Bonus diagnosis exchange — very permissive, any attempt counts
+        keywords: ["think", "maybe", "could", "might", "vpn", "timeout", "idle", "inactive", "openvpn", "config", "setting", "drop", "disconnect", "not sure", "unsure", "suspect", "believe", "perhaps", "probably", "possibly", "session", "connection", "keepalive", "timer", "expire", "time", "minutes", "server", "firewall", "network", "tls", "error", "log", "issue", "cause", "reason", "seems", "looks", "guess", "idea", "thought", "theory", "investigate", "check", "review", "suggest", "feel", "sense"],
         confusion: [
-          "I found the 'inactive 600' line in the server config. Do I need to remove it or change it, and is there a keepalive directive I should add alongside that?",
-          "So the 10-minute idle timeout is causing the drops. Should I just delete that line, or is there a better setting to replace it with? And do I need to restart the service after?",
+          "No worries at all! Just share any initial thought — there's genuinely no wrong answer here. What does your gut tell you?",
+          "Really, anything goes here! Even a hunch counts. What comes to mind when you think about the drops happening after 10–15 minutes of idle time?",
         ],
-        hint: "The root cause is the 'inactive 600' directive in the OpenVPN config. Tell the customer to comment it out, add 'keepalive 10 120' to both server and client configs, then restart the OpenVPN service.",
+        hint: "Bonus question! Think about what the customer told you: the VPN drops after 10–15 minutes of idle time. In OpenVPN, there's a configuration directive called 'inactive' that terminates sessions after a period of inactivity. That's likely the culprit — mention anything along those lines.",
         mannersKeywords: CLOSING_KEYWORDS,
         mannersRemark: CLOSING_REMARK,
         mannersPosition: "after",
