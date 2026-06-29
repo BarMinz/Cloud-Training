@@ -149,16 +149,16 @@ export const SIMULATION_TICKETS = [
       {
         keywords: ["firewall", "fw", "network", "rule", "change", "recent", "modified", "cwm", "portal", "security", "acl", "block", "filter", "traffic", "policy", "who", "admin", "setting", "touch", "edit", "configuration", "access", "inbound", "external", "route", "gateway", "connectivity"],
         confusion: [
-          "The servers show as running in the CWM portal but nothing from outside can reach them. Could it be a network or firewall issue? Someone was working on settings earlier.",
-          "Kamatera portal says servers are up, but external access is completely gone. Should we be looking at the firewall rules or network settings in CWM?",
+          "I don't know what's happening! The servers all show as Running in the CWM portal but nothing is reachable from outside. What else should I be checking? We're losing business every minute!",
+          "That's not helping us get back online. Everything was fine this morning and now it's all gone. Where should we even start looking?",
         ],
         hint: "The servers are running but unreachable from outside — this points to a network or firewall issue. Ask if anyone recently changed firewall or security settings in the Kamatera CWM portal.",
       },
       {
         keywords: ["rule", "add", "restore", "create", "port", "allow", "permit", "ssh", "rdp", "http", "https", "443", "80", "22", "3389", "open", "enable", "inbound", "traffic", "firewall", "config", "re-add", "recreate", "fix", "recover"],
         confusion: [
-          "All the firewall inbound rules are gone — someone deleted them. What rules do we need to add back to restore access to our servers?",
-          "The firewall rules were wiped. Do we just recreate the standard allow rules for SSH, RDP, HTTP, HTTPS? Is there a specific way to do it in CWM?",
+          "All the inbound rules are gone — the list is completely empty. I can see where to add new rules in CWM but I have no idea what to put in. How do I fix this?",
+          "The firewall rules were all deleted. I'm looking at the CWM firewall page right now — what rules do I need to add back to get the servers reachable again?",
         ],
         hint: "All CWM firewall inbound rules were accidentally deleted. Guide the customer to recreate rules for SSH (22), RDP (3389), HTTP (80), and HTTPS (443) for each server.",
         mannersKeywords: CLOSING_KEYWORDS,
