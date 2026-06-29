@@ -509,7 +509,7 @@ export default function TicketSimulation() {
                   <span className="text-xs text-slate-600">
                     {active.followUpIndex}/{active.followUps.length} customer replies received
                   </span>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 mr-10">
                     {canResolve && (
                       <button
                         onClick={resolveTicket}
