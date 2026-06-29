@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { api } from '../api/client'
 import { SIMULATION_TICKETS, PRIORITY_META } from '../data/simulationTickets'
-import { ArrowLeft, Send, CheckCircle2, Clock, User, Inbox, AlertCircle, Lock, Loader2 } from 'lucide-react'
+import { ArrowLeft, Send, CheckCircle2, Clock, User, Inbox, AlertCircle, Lock, Loader2, Lightbulb } from 'lucide-react'
 import clsx from 'clsx'
 
 function initTickets() {
@@ -88,6 +88,19 @@ export default function TicketSimulation() {
     const text = reply.trim()
     if (!text || typing) return
     const now = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+
+    if (text.toLowerCase() === '/hint') {
+      const ticket = tickets.find((t) => t.id === activeId)
+      const exchange = ticket.exchanges?.[ticket.followUpIndex]
+      const hintText = exchange?.hint ?? "No hint available for this step — you're on the right track!"
+      setTickets((prev) =>
+        prev.map((t) =>
+          t.id !== activeId ? t : { ...t, messages: [...t.messages, { from: 'system', text: hintText, time: now, _hint: true }] }
+        )
+      )
+      setReply('')
+      return
+    }
 
     setTickets((prev) =>
       prev.map((t) =>
@@ -361,6 +374,26 @@ export default function TicketSimulation() {
                 // Find if the NEXT message (from customer) is a confusion reply, to mark this agent msg
                 const nextMsg = active.messages[i + 1]
                 const triggeredConfusion = isAgent && nextMsg?._confusion
+
+                if (msg._hint) {
+                  return (
+                    <div key={i} className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-full bg-amber-500/15 border border-amber-500/25 flex items-center justify-center shrink-0 mt-0.5">
+                        <Lightbulb className="w-4 h-4 text-amber-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs font-semibold text-amber-400">Hint</span>
+                          <span className="text-xs text-slate-600">{msg.time}</span>
+                        </div>
+                        <div className="bg-amber-500/8 border border-amber-500/20 rounded-2xl rounded-tl-sm px-4 py-3 text-sm text-amber-100/85 leading-relaxed italic">
+                          {msg.text}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                }
+
                 return (
                   <div key={i} className={clsx('flex gap-3', isAgent && 'flex-row-reverse')}>
                     <div className={clsx(
