@@ -70,12 +70,12 @@ export default function LampLab() {
 
     if (termRef.current) {
       term.open(termRef.current)
-      fitAddon.fit()
+      requestAnimationFrame(() => fitAddon.fit())
     }
 
     xtermRef.current = term
 
-    const handleResize = () => {
+    const sendResize = () => {
       fitAddon.fit()
       if (wsRef.current?.readyState === WebSocket.OPEN) {
         wsRef.current.send(JSON.stringify({
@@ -85,10 +85,12 @@ export default function LampLab() {
         }))
       }
     }
-    window.addEventListener('resize', handleResize)
+
+    const ro = new ResizeObserver(sendResize)
+    if (termRef.current) ro.observe(termRef.current)
 
     return () => {
-      window.removeEventListener('resize', handleResize)
+      ro.disconnect()
       term.dispose()
     }
   }, [])
@@ -121,9 +123,11 @@ export default function LampLab() {
     ws.onopen = () => {
       setWsConnected(true)
       term.clear()
-      fitAddon.fit()
-      ws.send(JSON.stringify({ type: 'resize', rows: term.rows, cols: term.cols }))
-      term.focus()
+      requestAnimationFrame(() => {
+        fitAddon.fit()
+        ws.send(JSON.stringify({ type: 'resize', rows: term.rows, cols: term.cols }))
+        term.focus()
+      })
     }
 
     ws.onmessage = (evt) => {
