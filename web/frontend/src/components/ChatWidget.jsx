@@ -440,7 +440,7 @@ export default function ChatWidget() {
   const showNotifBanner = open && notifPerm === 'default'
 
   return (
-    <div className="fixed bottom-4 right-4 z-50">
+    <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end gap-3">
       <AnimatePresence>
         {open && (
           <motion.div
@@ -666,21 +666,28 @@ export default function ChatWidget() {
         )}
       </AnimatePresence>
 
-      {!open && (
-        <button
-          onClick={() => setOpen(true)}
-          className="relative w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all bg-gradient-to-br from-brand-500 to-violet-600 hover:scale-105 active:scale-95"
-          title="Open chat"
-        >
-          <MessageCircle className="w-5 h-5 text-white" />
-          <span className={clsx('absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-surface-0', STATUS_META[myStatus].dot)} />
-          {totalUnread > 0 && (
-            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center border-2 border-surface-0">
-              {totalUnread > 99 ? '99+' : totalUnread}
-            </span>
-          )}
-        </button>
-      )}
+      <AnimatePresence>
+        {!open && (
+          <motion.button
+            key="bubble"
+            initial={{ opacity: 0, scale: 0.7 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.7 }}
+            transition={{ duration: 0.15, ease: 'easeOut' }}
+            onClick={() => setOpen(true)}
+            className="relative w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-transform bg-gradient-to-br from-brand-500 to-violet-600 hover:scale-105 active:scale-95"
+            title="Open chat"
+          >
+            <MessageCircle className="w-5 h-5 text-white" />
+            <span className={clsx('absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-surface-0', STATUS_META[myStatus].dot)} />
+            {totalUnread > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center border-2 border-surface-0">
+                {totalUnread > 99 ? '99+' : totalUnread}
+              </span>
+            )}
+          </motion.button>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
