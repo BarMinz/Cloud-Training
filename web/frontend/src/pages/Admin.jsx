@@ -8,7 +8,7 @@ import ProgressRing from '../components/ProgressRing'
 import {
   Users, Loader2, Trash2, ShieldCheck,
   Search, RefreshCw, Award, TrendingUp, Activity, RotateCcw,
-  MessageSquare, X, Clock, User, Terminal, Eye, CheckCircle2, ChevronRight, Target, Lightbulb, Pencil, Camera, Lock, PowerOff,
+  MessageSquare, X, Clock, User, Terminal, Eye, CheckCircle2, ChevronRight, Target, Lightbulb, Pencil, Camera, Lock, PowerOff, ClipboardList,
 } from 'lucide-react'
 import { DIFFICULTY_COLORS } from '../data/phases'
 import clsx from 'clsx'
@@ -251,6 +251,15 @@ export default function Admin() {
               {sub && <p className="text-xs text-slate-500 mt-0.5">{sub}</p>}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Pending reviews callout */}
+      {summary?.pending_reviews > 0 && (
+        <div className="mb-6 flex items-center gap-3 px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/25 text-sm">
+          <ClipboardList className="w-4 h-4 text-amber-400 shrink-0" />
+          <span className="text-amber-300 font-medium">{summary.pending_reviews} phase{summary.pending_reviews !== 1 ? 's' : ''} awaiting review</span>
+          <span className="text-slate-400">— expand a trainee's progress below to grade them.</span>
         </div>
       )}
 

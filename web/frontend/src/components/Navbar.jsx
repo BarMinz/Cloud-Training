@@ -1,20 +1,37 @@
+import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
+import { api } from '../api/client'
 import { LogOut, LayoutDashboard, ShieldCheck, Cloud, Sun, Moon } from 'lucide-react'
 import clsx from 'clsx'
+
+const isAdmin = (role) => role === 'admin' || role === 'main_admin'
 
 export default function Navbar() {
   const { user, logout } = useAuth()
   const { theme, toggleTheme } = useTheme()
   const location = useLocation()
   const navigate = useNavigate()
+  const [pendingReviews, setPendingReviews] = useState(0)
+
+  useEffect(() => {
+    if (!isAdmin(user?.role)) return
+    const fetch = () => {
+      api.get('/admin/analytics/summary')
+        .then((d) => setPendingReviews(d.pending_reviews ?? 0))
+        .catch(() => {})
+    }
+    fetch()
+    const id = setInterval(fetch, 60_000)
+    return () => clearInterval(id)
+  }, [user])
 
   const handleLogout = () => { logout(); navigate('/login') }
 
   const links = [
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    ...(user?.role === 'admin' ? [{ to: '/admin', label: 'Admin', icon: ShieldCheck }] : []),
+    ...(isAdmin(user?.role) ? [{ to: '/admin', label: 'Admin', icon: ShieldCheck, badge: pendingReviews }] : []),
   ]
 
   return (
@@ -27,12 +44,12 @@ export default function Navbar() {
 
       {/* Nav links */}
       <div className="flex items-center gap-1 flex-1">
-        {links.map(({ to, label, icon: Icon }) => (
+        {links.map(({ to, label, icon: Icon, badge }) => (
           <Link
             key={to}
             to={to}
             className={clsx(
-              'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-150',
+              'relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-150',
               location.pathname === to || location.pathname.startsWith(to + '/')
                 ? 'bg-brand-600/20 text-brand-300'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
@@ -40,6 +57,11 @@ export default function Navbar() {
           >
             <Icon className="w-4 h-4" />
             {label}
+            {badge > 0 && (
+              <span className="ml-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center">
+                {badge > 99 ? '99+' : badge}
+              </span>
+            )}
           </Link>
         ))}
       </div>

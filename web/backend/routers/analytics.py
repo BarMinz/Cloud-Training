@@ -36,12 +36,19 @@ def get_summary(
         if any(p.updated_at and p.updated_at > cutoff for p in u.progress)
     )
 
+    pending_reviews = sum(
+        1 for u in trainees
+        for p in u.progress
+        if p.status == models.PhaseStatus.completed and not p.grade
+    )
+
     return {
         "total_users": total,
         "fully_certified": certified,
         "certification_rate": round(certified / trainee_count * 100, 1) if trainee_count else 0,
         "avg_phases_completed": avg_phases,
         "active_users_7d": active,
+        "pending_reviews": pending_reviews,
     }
 
 
