@@ -59,14 +59,20 @@ def _update_nginx_map(username: str, container_ip: str) -> None:
 def _write_motd(name: str, username: str = '') -> None:
     C, Y, W = '\033[1;36m', '\033[1;33m', '\033[0m'
     DIV = f'{C}{"─" * 54}{W}'
-    url = f'http://{username}.{DOMAIN}' if username else f'http://{DOMAIN}'
+
+    if username:
+        http_url  = f'http://{username}.{DOMAIN}'
+        https_url = f'https://{username}.{DOMAIN}'
+        url_lines = f'  {Y}{https_url}{W}\n  {Y}{http_url}{W}'
+    else:
+        url_lines = f'  {Y}http://{DOMAIN}{W}'
 
     motd = (
         f'\n{DIV}\n'
         f'{C}         Welcome to your LAMP Lab 🌐{W}\n'
         f'{DIV}\n\n'
         f' Your lab is publicly accessible at:\n\n'
-        f'  {Y}{url}{W}\n\n'
+        f'{url_lines}\n\n'
         f' Once Apache is running, open the URL in your browser.\n'
         f' {C}Tip:{W} start with  apt update && apt install -y apache2\n\n'
         f'{DIV}\n'
