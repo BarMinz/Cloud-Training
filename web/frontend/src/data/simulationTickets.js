@@ -78,40 +78,19 @@ export const SIMULATION_TICKETS = [
       },
     ],
     followUps: [
-      "We need Windows Server 2022, 4 vCPUs, 16 GB RAM, 200 GB SSD. It should be in the IL-TA zone under our existing account. Please name it PROD-APP-03.",
-      "Yes, go ahead. For networking — put it on the same VLAN as PROD-APP-01 and PROD-APP-02. Please send the initial admin credentials to me at a.cohen@devteam.io once it's up.",
-      "The server is up, I received the credentials, and RDP access is working perfectly. It's on the correct network. Thank you for the quick turnaround — request complete!",
+      "Sure! We need Windows Server 2022, 4 vCPUs, 16 GB RAM, 200 GB SSD, in the IL-TA zone under our existing account. Please name it PROD-APP-03, place it on the same VLAN as PROD-APP-01 and PROD-APP-02, and send the initial admin credentials to a.cohen@devteam.io once it's ready. Thanks!",
     ],
     exchanges: [
       {
-        keywords: ["spec", "os", "operating", "cpu", "vcpu", "ram", "memory", "storage", "disk", "size", "name", "hostname", "zone", "region", "account", "resource", "config", "what", "need", "require", "detail", "which", "information", "provide", "additional", "elaborate", "clarify", "explain", "understand", "further", "regarding", "share", "assist", "investigate", "concern", "situation", "look", "review", "gather", "more", "issue", "request", "requirement"],
+        keywords: ["spec", "os", "operating", "cpu", "vcpu", "ram", "memory", "storage", "disk", "size", "name", "hostname", "zone", "region", "account", "resource", "config", "what", "need", "require", "detail", "which", "information", "provide", "additional", "elaborate", "clarify", "explain", "understand", "further", "regarding", "share", "assist", "investigate", "concern", "situation", "look", "review", "gather", "more", "request", "requirement", "network", "vlan", "credential", "email", "send"],
         confusion: [
           "I just need a new server on our Kamatera account. What details do you need from me to create it — OS, specs, that kind of thing?",
           "I'm not sure what information you need. Could you ask me about the server specs, zone, and what we'd like to name it?",
         ],
-        hint: "Ask the customer for the server specifications: OS, CPU, RAM, storage size, hostname, and which region/zone in their Kamatera account.",
+        hint: "Ask the customer for the server specifications: OS, CPU, RAM, storage size, hostname, zone, VLAN placement, and where to send the credentials once it's ready.",
         mannersKeywords: GREETING_KEYWORDS,
         mannersRemark: GREETING_REMARK,
         mannersPosition: "before",
-      },
-      {
-        keywords: ["confirm", "proceed", "network", "vlan", "credential", "password", "email", "send", "username", "admin", "connect", "connectivity", "ready", "go", "create", "same", "existing", "provision", "start", "begin", "setup"],
-        confusion: [
-          "I've given you the specs — Windows 2022, 4 vCPUs, 16 GB RAM, 200 GB SSD, IL-TA zone, named PROD-APP-03. Are we good to proceed, or do you need network and credential delivery details first?",
-          "The specs are set. Do you need to know which network to put it on, or where to send the credentials once it's created?",
-        ],
-        hint: "You have all the specs. Confirm you're ready to proceed and ask about network placement (VLAN) and how to deliver the initial credentials.",
-      },
-      {
-        keywords: ["create", "provision", "spin", "build", "done", "complete", "ready", "credential", "password", "send", "rdp", "access", "ip", "address", "when", "status", "setup", "deploy", "email", "time", "long", "eta"],
-        confusion: [
-          "All the details are confirmed. When can the server be provisioned, and how will I receive the access credentials once it's ready?",
-          "We're all set on our end. How long will it take to spin up, and will the credentials come by email?",
-        ],
-        hint: "Confirm the provisioning timeline and let the customer know the credentials will be sent to their email once the server is ready.",
-        mannersKeywords: CLOSING_KEYWORDS,
-        mannersRemark: CLOSING_REMARK,
-        mannersPosition: "after",
       },
     ],
   },
