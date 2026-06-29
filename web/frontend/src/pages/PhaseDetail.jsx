@@ -112,6 +112,7 @@ export default function PhaseDetail() {
             <div>
               <p className="text-sm font-semibold text-sky-300">Interactive Simulation</p>
               <p className="text-xs text-slate-400 mt-0.5">Practice with a live Kayako-style support queue — 4 tickets, real customer conversations.</p>
+              <p className="text-xs text-slate-500 mt-1.5">Type <code className="bg-white/8 border border-white/10 rounded px-1 py-0.5 text-amber-300 not-italic">/hint</code> in the reply box at any time for a contextual hint.</p>
             </div>
             <Link to="/phase/1/simulation" className="shrink-0 bg-sky-600 hover:bg-sky-500 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-all flex items-center gap-2">
               <MonitorPlay className="w-4 h-4" /> Launch
