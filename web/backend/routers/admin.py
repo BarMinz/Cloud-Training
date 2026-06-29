@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from email_utils import send_grade_notification
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional
@@ -325,6 +326,24 @@ def submit_review(
         record.completed_at = None
 
     db.commit()
+
+    trainee = db.query(models.User).filter(models.User.id == user_id).first()
+    if trainee:
+        _PHASE_TITLES = {
+            1: "Ticket Simulation", 2: "LAMP Project", 3: "Troubleshooting Lab",
+            4: "Firewall Lab", 5: "Windows Infrastructure", 6: "Site-to-Site VPN",
+            7: "AI Ticket Handling", 8: "cPanel Migration + DNS",
+            9: "AI Debugging", 10: "KVM Operations Lab",
+        }
+        phase_title = _PHASE_TITLES.get(phase_id, f"Phase {phase_id}")
+        send_grade_notification(
+            to=trainee.email,
+            username=trainee.username,
+            phase_title=phase_title,
+            grade=body.grade,
+            feedback=record.feedback,
+        )
+
     return {
         "grade": record.grade,
         "feedback": record.feedback,
