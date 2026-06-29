@@ -72,6 +72,18 @@ export default function TicketSimulation() {
     }
   }, [active?.messages, typing])
 
+  const isRelevant = (text, exchange) => {
+    if (!exchange?.keywords) return true
+    const lower = text.toLowerCase()
+    return exchange.keywords.some((kw) => lower.includes(kw))
+  }
+
+  const hasManners = (text, exchange) => {
+    if (!exchange?.mannersKeywords) return true
+    const lower = text.toLowerCase()
+    return exchange.mannersKeywords.some((kw) => lower.includes(kw))
+  }
+
   const sendReply = () => {
     const text = reply.trim()
     if (!text || typing) return
@@ -87,27 +99,66 @@ export default function TicketSimulation() {
     setReply('')
 
     const ticket = tickets.find((t) => t.id === activeId)
-    if (ticket.followUpIndex < ticket.followUps.length) {
-      setTyping(true)
-      setTimeout(() => {
-        const replyTime = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+    if (ticket.followUpIndex >= ticket.followUps.length) return
+
+    const exchange = ticket.exchanges?.[ticket.followUpIndex]
+    const relevant = isRelevant(text, exchange)
+    const polite = hasManners(text, exchange)
+
+    setTyping(true)
+    setTimeout(() => {
+      const replyTime = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+
+      if (relevant) {
+        // Technically correct — advance, but optionally prepend/append a manners note
         setTickets((prev) =>
-          prev.map((t) =>
-            t.id !== activeId
-              ? t
-              : {
-                  ...t,
-                  messages: [
-                    ...t.messages,
-                    { from: 'customer', text: t.followUps[t.followUpIndex], time: replyTime },
-                  ],
-                  followUpIndex: t.followUpIndex + 1,
-                }
-          )
+          prev.map((t) => {
+            if (t.id !== activeId) return t
+            const followUpText = t.followUps[t.followUpIndex]
+            let customerText = followUpText
+            let hasRemark = false
+            if (!polite && t.exchanges?.[t.followUpIndex]?.mannersRemark) {
+              const remarks = t.exchanges[t.followUpIndex].mannersRemark
+              const pick = remarks[Math.floor(Math.random() * remarks.length)]
+              const pos = t.exchanges[t.followUpIndex].mannersPosition ?? 'before'
+              customerText = pos === 'after'
+                ? `${followUpText}\n\n${pick}`
+                : `${pick}\n\n${followUpText}`
+              hasRemark = true
+            }
+            return {
+              ...t,
+              messages: [
+                ...t.messages,
+                { from: 'customer', text: customerText, time: replyTime, _mannersRemark: hasRemark },
+              ],
+              followUpIndex: t.followUpIndex + 1,
+            }
+          })
         )
-        setTyping(false)
-      }, 1800)
-    }
+      } else {
+        // Off-topic — customer pushes back, followUpIndex stays the same
+        setTickets((prev) =>
+          prev.map((t) => {
+            if (t.id !== activeId) return t
+            const confusions = t.exchanges?.[t.followUpIndex]?.confusion ?? []
+            const usedCount = t.messages.filter(
+              (m) => m.from === 'customer' && m._confusion && m._stage === t.followUpIndex
+            ).length
+            const pick = confusions[usedCount % confusions.length] ??
+              "I'm sorry, that doesn't address my issue. Could you please focus on the specific problem I described?"
+            return {
+              ...t,
+              messages: [
+                ...t.messages,
+                { from: 'customer', text: pick, time: replyTime, _confusion: true, _stage: t.followUpIndex },
+              ],
+            }
+          })
+        )
+      }
+      setTyping(false)
+    }, 1800)
   }
 
   const resolveTicket = () => {
@@ -307,6 +358,9 @@ export default function TicketSimulation() {
             <div ref={threadRef} className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
               {active.messages.map((msg, i) => {
                 const isAgent = msg.from === 'agent'
+                // Find if the NEXT message (from customer) is a confusion reply, to mark this agent msg
+                const nextMsg = active.messages[i + 1]
+                const triggeredConfusion = isAgent && nextMsg?._confusion
                 return (
                   <div key={i} className={clsx('flex gap-3', isAgent && 'flex-row-reverse')}>
                     <div className={clsx(
@@ -323,17 +377,42 @@ export default function TicketSimulation() {
                         <span>{msg.time}</span>
                       </div>
                       <div className={clsx(
-                        'rounded-2xl px-4 py-3 text-sm leading-relaxed',
+                        'rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap',
                         isAgent
-                          ? 'bg-brand-500/20 text-slate-200 rounded-tr-sm'
-                          : 'bg-surface-3 text-slate-300 rounded-tl-sm'
+                          ? triggeredConfusion
+                            ? 'bg-amber-500/10 border border-amber-500/20 text-slate-300 rounded-tr-sm'
+                            : 'bg-brand-500/20 text-slate-200 rounded-tr-sm'
+                          : msg._confusion
+                            ? 'bg-red-500/10 border border-red-500/20 text-slate-300 rounded-tl-sm'
+                            : msg._mannersRemark
+                            ? 'bg-amber-500/8 border border-amber-500/15 text-slate-300 rounded-tl-sm'
+                            : 'bg-surface-3 text-slate-300 rounded-tl-sm'
                       )}>
                         {msg.text}
                       </div>
+                      {triggeredConfusion && (
+                        <p className="text-xs text-amber-400/70 mt-1 text-right">
+                          Response didn't address the issue — try again
+                        </p>
+                      )}
                     </div>
                   </div>
                 )
               })}
+
+              {/* Hint box — shown below the latest confusion message */}
+              {(() => {
+                const lastMsg = active.messages[active.messages.length - 1]
+                if (!lastMsg?._confusion) return null
+                const hint = active.exchanges?.[lastMsg._stage]?.hint
+                if (!hint) return null
+                return (
+                  <div className="flex items-start gap-2 mx-2 text-xs text-sky-300/90 bg-sky-500/8 border border-sky-500/20 rounded-xl px-3.5 py-2.5">
+                    <span className="shrink-0 mt-px">💡</span>
+                    <span><span className="font-semibold text-sky-300">Hint:</span> {hint}</span>
+                  </div>
+                )
+              })()}
 
               {typing && (
                 <div className="flex gap-3">
