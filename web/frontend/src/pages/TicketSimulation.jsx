@@ -323,7 +323,7 @@ export default function TicketSimulation() {
 
         {/* Conversation panel */}
         {active && (
-          <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
             {/* Ticket header */}
             <div className="bg-surface-1 border-b border-white/8 px-6 py-4 shrink-0">
               <div className="flex items-start gap-4">
@@ -377,7 +377,7 @@ export default function TicketSimulation() {
             </div>
 
             {/* Messages */}
-            <div ref={threadRef} className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+            <div ref={threadRef} className="flex-1 min-h-0 overflow-y-auto px-6 py-5 space-y-5">
               {active.messages.map((msg, i) => {
                 const isAgent = msg.from === 'agent'
                 // Find if the NEXT message (from customer) is a confusion reply, to mark this agent msg
