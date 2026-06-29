@@ -106,7 +106,11 @@ export default function TicketSimulation() {
       prev.map((t) =>
         t.id !== activeId
           ? t
-          : { ...t, messages: [...t.messages, { from: 'agent', text, time: now }] }
+          : {
+              ...t,
+              messages: [...t.messages, { from: 'agent', text, time: now }],
+              openedAt: t.openedAt ?? Date.now(),
+            }
       )
     )
     setReply('')

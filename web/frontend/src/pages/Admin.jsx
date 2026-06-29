@@ -744,6 +744,27 @@ export default function Admin() {
               </div>
             ) : (
               <div className="flex flex-1 overflow-hidden">
+                {/* Compute order tickets were opened */}
+                {(() => {
+                  const ORDINALS = ['1st', '2nd', '3rd', '4th']
+                  const ticketOrder = {}
+                  ;[...simViewer.tickets]
+                    .filter((t) => t.messages.some((m) => m.from === 'agent'))
+                    .sort((a, b) => {
+                      // Prefer epoch stamp; fall back to parsing HH:MM of first agent message
+                      const stamp = (t) => {
+                        if (t.openedAt) return t.openedAt
+                        const first = t.messages.find((m) => m.from === 'agent')
+                        if (!first) return Infinity
+                        const [h, m] = first.time.split(':').map(Number)
+                        return h * 60 + m
+                      }
+                      return stamp(a) - stamp(b)
+                    })
+                    .forEach((t, i) => { ticketOrder[t.id] = ORDINALS[i] ?? `${i + 1}th` })
+
+                  return (
+                    <>
                 {/* Ticket list */}
                 <div className="w-56 shrink-0 border-r border-white/8 overflow-y-auto">
                   {simViewer.tickets.map((t) => {
@@ -751,6 +772,7 @@ export default function Admin() {
                     const assigned = PRIORITY_META[t.assignedPriority ?? 'unassigned']
                     const isCorrect = t.assignedPriority === meta?.priority
                     const isActive = t.id === simViewerActiveId
+                    const ordinal = ticketOrder[t.id]
                     return (
                       <button
                         key={t.id}
@@ -763,7 +785,12 @@ export default function Admin() {
                         <div className="flex items-center gap-1.5 mb-1">
                           <div className={clsx('w-1.5 h-1.5 rounded-full shrink-0', assigned.dot)} />
                           <span className="text-xs font-mono text-slate-500">{t.id}</span>
-                          {t.status === 'resolved' && <span className="ml-auto text-xs text-emerald-400">✓</span>}
+                          <div className="ml-auto flex items-center gap-1">
+                            {ordinal && (
+                              <span className="text-xs font-semibold text-brand-400/80 bg-brand-500/10 rounded px-1">{ordinal}</span>
+                            )}
+                            {t.status === 'resolved' && <span className="text-xs text-emerald-400">✓</span>}
+                          </div>
                         </div>
                         <p className="text-xs text-slate-300 leading-snug line-clamp-2">{meta?.subject || t.subject}</p>
                         <div className="flex items-center gap-1 mt-1">
@@ -796,6 +823,11 @@ export default function Admin() {
                             ? <span className="badge border text-xs bg-emerald-500/15 text-emerald-400 border-emerald-500/30">Resolved</span>
                             : <span className="badge border text-xs bg-sky-500/15 text-sky-400 border-sky-500/30">Open</span>
                           }
+                          {ticketOrder[t.id] && (
+                            <span className="ml-auto text-xs font-semibold text-brand-400/80 bg-brand-500/10 border border-brand-500/20 rounded-md px-2 py-0.5">
+                              Handled {ticketOrder[t.id]}
+                            </span>
+                          )}
                         </div>
                         <p className="text-sm font-semibold text-white">{meta?.subject || t.subject}</p>
                         <div className="flex items-center gap-3 mt-1 text-xs text-slate-500">
@@ -828,6 +860,9 @@ export default function Admin() {
                         )}
                       </div>
                     </div>
+                  )
+                })()}
+                    </>
                   )
                 })()}
               </div>
