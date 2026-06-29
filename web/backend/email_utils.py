@@ -12,7 +12,7 @@ SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
 SMTP_USER = os.getenv("SMTP_USER", "")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
 SMTP_FROM = os.getenv("SMTP_FROM", SMTP_USER)
-APP_NAME = "CloudTrain"
+APP_NAME = "Cloud-Training"
 APP_URL = os.getenv("APP_URL", "https://cloud-training.online")
 
 
