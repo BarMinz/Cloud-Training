@@ -63,25 +63,31 @@ def _container_bound_ports(name: str) -> list[int]:
     return sorted(ports)
 
 
-def _write_motd(name: str, bound_ports: list[int]) -> None:
+DOMAIN = "cloud-training.online"
+
+
+def _write_motd(name: str, bound_ports: list[int], username: str = '') -> None:
     C, G, Y, W, R = '\033[1;36m', '\033[1;32m', '\033[1;33m', '\033[0m', '\033[1;31m'
     DIV = f'{C}{"─" * 54}{W}'
+
+    subdomain = f'{username}.{DOMAIN}' if username else SECONDARY_IP
 
     if bound_ports:
         port_lines = ''
         for p in bound_ports:
             scheme = 'https' if p == 443 else 'http'
             suffix = '' if p in (80, 443) else f':{p}'
-            port_lines += f'  Port {p:<5}  {G}→{W}  {G}{scheme}://{SECONDARY_IP}{suffix}{W}\n'
+            port_lines += f'  Port {p:<5}  {G}→{W}  {G}{scheme}://{subdomain}{suffix}{W}\n'
 
         motd = (
             f'\n{DIV}\n'
             f'{C}         Welcome to your LAMP Lab 🌐{W}\n'
             f'{DIV}\n\n'
             f' Your lab server is publicly accessible at:\n\n'
+            f'  Domain      {Y}→{W}  {Y}{subdomain}{W}\n'
             f'  IP address  {Y}→{W}  {Y}{SECONDARY_IP}{W}\n'
             f'{port_lines}\n'
-            f' Once Apache is running, open the HTTP URL in your browser to test.\n'
+            f' Once Apache is running, open the URL in your browser to test.\n'
             f' {C}Tip:{W} start with  apt update && apt install -y apache2\n\n'
             f'{DIV}\n'
         )
@@ -107,7 +113,7 @@ def _write_motd(name: str, bound_ports: list[int]) -> None:
     )
 
 
-def ensure_container_running(name: str) -> bool:
+def ensure_container_running(name: str, username: str = '') -> bool:
     status = get_container_status(name)
     if status == 'running':
         return True
@@ -126,7 +132,7 @@ def ensure_container_running(name: str) -> bool:
         cmd += ['ubuntu:24.04', 'sleep', 'infinity']
         ok = _run(cmd, timeout=30).returncode == 0
         if ok:
-            _write_motd(name, free_ports)
+            _write_motd(name, free_ports, username)
         return ok
     return False
 
@@ -134,13 +140,15 @@ def ensure_container_running(name: str) -> bool:
 @router.post("/lamp")
 def start_lamp_container(current_user: models.User = Depends(auth_utils.get_current_user)):
     name = container_name(current_user.id)
-    if not ensure_container_running(name):
+    if not ensure_container_running(name, username=current_user.username):
         raise HTTPException(status_code=500, detail="Failed to start container")
     bound = _container_bound_ports(name)
+    subdomain = f'{current_user.username}.{DOMAIN}' if bound else None
     return {
         "status": get_container_status(name),
         "container": name,
         "public_ip": SECONDARY_IP if bound else None,
+        "subdomain": subdomain,
         "bound_ports": bound,
     }
 
@@ -184,13 +192,15 @@ async def admin_lamp_terminal(websocket: WebSocket, user_id: int, token: str = Q
         if not admin_user or admin_user.role not in (models.UserRole.admin, models.UserRole.main_admin):
             await websocket.close(code=4003)
             return
+        target_user = db.query(models.User).filter(models.User.id == user_id).first()
+        target_username = target_user.username if target_user else ''
     finally:
         db.close()
 
     name = container_name(user_id)
     loop = asyncio.get_event_loop()
 
-    ok = await loop.run_in_executor(None, lambda: ensure_container_running(name))
+    ok = await loop.run_in_executor(None, lambda: ensure_container_running(name, username=target_username))
     if not ok:
         await websocket.close(code=4002)
         return
