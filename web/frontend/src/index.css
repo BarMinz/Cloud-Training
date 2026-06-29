@@ -2,6 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --surface-0: #08081a;
+  --surface-1: #0f0f2a;
+  --surface-2: #16163a;
+  --surface-3: #1e1e4a;
+  --surface-4: #26265a;
+}
+
+html.light {
+  color-scheme: light;
+  --surface-0: #f8fafc;
+  --surface-1: #ffffff;
+  --surface-2: #f1f5f9;
+  --surface-3: #e2e8f0;
+  --surface-4: #cbd5e1;
+}
+
 @layer base {
   * {
     box-sizing: border-box;
@@ -10,6 +27,10 @@
   body {
     @apply bg-surface-0 text-slate-200 font-sans antialiased;
     min-height: 100vh;
+  }
+
+  html.light body {
+    color: #1e293b;
   }
 
   ::-webkit-scrollbar {
@@ -95,4 +116,56 @@
     from { background-position: 0% 50%; }
     to   { background-position: 200% 50%; }
   }
+}
+
+/* ── Light mode overrides ── */
+
+/* Text colors */
+html.light .text-white  { color: #0f172a !important; }
+html.light .text-slate-200 { color: #1e293b !important; }
+html.light .text-slate-300 { color: #334155 !important; }
+html.light .text-slate-400 { color: #475569 !important; }
+html.light .text-slate-500 { color: #94a3b8 !important; }
+html.light .text-slate-600 { color: #64748b !important; }
+html.light .hover\:text-slate-200:hover { color: #1e293b !important; }
+
+/* White/alpha backgrounds → dark/alpha equivalents */
+html.light .bg-white\/3  { background-color: rgba(0,0,0,0.02) !important; }
+html.light .bg-white\/5  { background-color: rgba(0,0,0,0.04) !important; }
+html.light .bg-white\/8  { background-color: rgba(0,0,0,0.05) !important; }
+html.light .bg-white\/10 { background-color: rgba(0,0,0,0.06) !important; }
+html.light .bg-white\/20 { background-color: rgba(0,0,0,0.10) !important; }
+html.light .hover\:bg-white\/5:hover { background-color: rgba(0,0,0,0.04) !important; }
+html.light .hover\:bg-white\/3:hover { background-color: rgba(0,0,0,0.02) !important; }
+
+/* White/alpha borders → dark/alpha equivalents */
+html.light .border-white\/5  { border-color: rgba(0,0,0,0.05) !important; }
+html.light .border-white\/8  { border-color: rgba(0,0,0,0.08) !important; }
+html.light .border-white\/10 { border-color: rgba(0,0,0,0.10) !important; }
+html.light .border-white\/20 { border-color: rgba(0,0,0,0.15) !important; }
+html.light .hover\:border-white\/20:hover { border-color: rgba(0,0,0,0.15) !important; }
+
+/* Component overrides (compiled @apply values need direct overrides) */
+html.light .glass {
+  background-color: rgba(255,255,255,0.85) !important;
+  border-color: rgba(0,0,0,0.08) !important;
+}
+
+html.light .card {
+  border-color: rgba(0,0,0,0.08) !important;
+}
+
+html.light .input {
+  background-color: rgba(0,0,0,0.03) !important;
+  border-color: rgba(0,0,0,0.15) !important;
+  color: #1e293b !important;
+}
+html.light .input::placeholder { color: #94a3b8 !important; }
+
+html.light .btn-ghost {
+  color: #475569 !important;
+}
+html.light .btn-ghost:hover {
+  color: #1e293b !important;
+  background-color: rgba(0,0,0,0.05) !important;
 }

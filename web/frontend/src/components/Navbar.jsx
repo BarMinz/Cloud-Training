@@ -1,10 +1,12 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { LogOut, LayoutDashboard, ShieldCheck, Cloud } from 'lucide-react'
+import { useTheme } from '../contexts/ThemeContext'
+import { LogOut, LayoutDashboard, ShieldCheck, Cloud, Sun, Moon } from 'lucide-react'
 import clsx from 'clsx'
 
 export default function Navbar() {
   const { user, logout } = useAuth()
+  const { theme, toggleTheme } = useTheme()
   const location = useLocation()
   const navigate = useNavigate()
 
@@ -56,6 +58,9 @@ export default function Navbar() {
             }
           </div>
         </Link>
+        <button onClick={toggleTheme} className="btn-ghost p-2 rounded-lg" title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
+          {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+        </button>
         <button onClick={handleLogout} className="btn-ghost p-2 rounded-lg" title="Log out">
           <LogOut className="w-4 h-4" />
         </button>

@@ -17,11 +17,11 @@ export default {
           900: '#312e81',
         },
         surface: {
-          0:   '#08081a',
-          1:   '#0f0f2a',
-          2:   '#16163a',
-          3:   '#1e1e4a',
-          4:   '#26265a',
+          0:   'var(--surface-0)',
+          1:   'var(--surface-1)',
+          2:   'var(--surface-2)',
+          3:   'var(--surface-3)',
+          4:   'var(--surface-4)',
         },
       },
       fontFamily: {
