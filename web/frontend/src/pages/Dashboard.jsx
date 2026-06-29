@@ -4,7 +4,7 @@ import { api } from '../api/client'
 import PhaseCard from '../components/PhaseCard'
 import ProgressRing from '../components/ProgressRing'
 import { PHASES } from '../data/phases'
-import { CheckCircle2, Loader2, Zap, Trophy, BookOpen } from 'lucide-react'
+import { CheckCircle2, Loader2, Zap, Trophy, BookOpen, AlertTriangle } from 'lucide-react'
 
 export default function Dashboard() {
   const { user } = useAuth()
@@ -22,8 +22,11 @@ export default function Dashboard() {
 
   const isLocked = (phaseId) => {
     if (phaseId === 1) return false
-    return getProgress(phaseId - 1)?.status !== 'completed'
+    const prev = getProgress(phaseId - 1)
+    return prev?.status !== 'completed' || prev?.grade === 'not_passed'
   }
+
+  const needsRevision = progress.filter((p) => p.grade === 'not_passed')
 
   const completed   = progress.filter((p) => p.status === 'completed').length
   const inProgress  = progress.filter((p) => p.status === 'in_progress').length
@@ -80,6 +83,28 @@ export default function Dashboard() {
           </div>
         ))}
       </div>
+
+      {/* Revision required banner */}
+      {needsRevision.length > 0 && (
+        <div className="mb-6 rounded-xl border border-red-500/25 bg-red-500/8 px-4 py-3 flex items-start gap-3">
+          <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold text-red-400">
+              {needsRevision.length === 1 ? '1 phase needs revision' : `${needsRevision.length} phases need revision`}
+            </p>
+            <p className="text-xs text-slate-400 mt-0.5">
+              {needsRevision.map((p) => {
+                const phase = PHASES.find((ph) => ph.id === p.phase_id)
+                return (
+                  <a key={p.phase_id} href={`/phase/${p.phase_id}`} className="underline hover:text-slate-200 transition-colors mr-3">
+                    Phase {p.phase_id}: {phase?.title}
+                  </a>
+                )
+              })}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Progress bar */}
       <div className="mb-8">

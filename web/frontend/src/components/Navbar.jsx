@@ -43,7 +43,7 @@ export default function Navbar() {
       {/* Logo */}
       <Link to="/dashboard" className="flex items-center gap-2 mr-4 shrink-0">
         <Cloud className="w-5 h-5 text-brand-400" />
-        <span className="font-bold text-white tracking-tight">CloudTrain</span>
+        <span className="font-bold text-white tracking-tight">Cloud-Training</span>
       </Link>
 
       {/* Nav links */}
