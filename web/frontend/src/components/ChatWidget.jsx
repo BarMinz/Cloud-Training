@@ -440,7 +440,7 @@ export default function ChatWidget() {
   const showNotifBanner = open && notifPerm === 'default'
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end gap-3">
+    <div className="fixed bottom-4 right-4 z-50">
       <AnimatePresence>
         {open && (
           <motion.div
@@ -449,7 +449,7 @@ export default function ChatWidget() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.96 }}
             transition={{ duration: 0.18, ease: 'easeOut' }}
-            className="card glass w-[34rem] sm:w-[36rem] h-[30rem] flex shadow-2xl overflow-hidden"
+            className="absolute bottom-16 right-0 card glass w-[34rem] sm:w-[36rem] h-[30rem] flex shadow-2xl overflow-hidden"
           >
             <div className="w-40 border-r border-white/8 flex flex-col bg-surface-1/40">
               <div className="px-3 py-2.5 border-b border-white/8 flex items-center justify-between">
@@ -666,28 +666,29 @@ export default function ChatWidget() {
         )}
       </AnimatePresence>
 
-      <AnimatePresence>
-        {!open && (
-          <motion.button
-            key="bubble"
-            initial={{ opacity: 0, scale: 0.7 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.7 }}
-            transition={{ duration: 0.15, ease: 'easeOut' }}
-            onClick={() => setOpen(true)}
-            className="relative w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-transform bg-gradient-to-br from-brand-500 to-violet-600 hover:scale-105 active:scale-95"
-            title="Open chat"
-          >
-            <MessageCircle className="w-5 h-5 text-white" />
-            <span className={clsx('absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-surface-0', STATUS_META[myStatus].dot)} />
-            {totalUnread > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center border-2 border-surface-0">
-                {totalUnread > 99 ? '99+' : totalUnread}
-              </span>
-            )}
-          </motion.button>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="relative w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-transform bg-gradient-to-br from-brand-500 to-violet-600 hover:scale-105 active:scale-95"
+        title={open ? 'Close chat' : 'Open chat'}
+      >
+        <AnimatePresence mode="wait" initial={false}>
+          {open ? (
+            <motion.span key="x" initial={{ opacity: 0, rotate: -90 }} animate={{ opacity: 1, rotate: 0 }} exit={{ opacity: 0, rotate: 90 }} transition={{ duration: 0.12 }}>
+              <X className="w-5 h-5 text-white" />
+            </motion.span>
+          ) : (
+            <motion.span key="chat" initial={{ opacity: 0, rotate: 90 }} animate={{ opacity: 1, rotate: 0 }} exit={{ opacity: 0, rotate: -90 }} transition={{ duration: 0.12 }}>
+              <MessageCircle className="w-5 h-5 text-white" />
+            </motion.span>
+          )}
+        </AnimatePresence>
+        <span className={clsx('absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-surface-0', STATUS_META[myStatus].dot)} />
+        {!open && totalUnread > 0 && (
+          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center border-2 border-surface-0">
+            {totalUnread > 99 ? '99+' : totalUnread}
+          </span>
         )}
-      </AnimatePresence>
+      </button>
     </div>
   )
 }
