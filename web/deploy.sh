@@ -73,6 +73,9 @@ depend() {
 EOF
 chmod +x "$BACKEND_SERVICE"
 
+echo "==> Building LAMP base Docker image..."
+docker build -t lamp-base:latest "$(dirname "$0")/lamp-base/"
+
 echo "==> Starting services..."
 rc-update add cloud-training-api default 2>/dev/null || true
 rc-update add nginx default 2>/dev/null || true
