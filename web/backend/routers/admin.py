@@ -319,10 +319,16 @@ def submit_review(
     record.feedback = body.feedback or ""
     record.reviewed_by = current_admin.id
     record.reviewed_at = datetime.utcnow()
+
+    if body.grade == "not_passed":
+        record.status = models.PhaseStatus.in_progress
+        record.completed_at = None
+
     db.commit()
     return {
         "grade": record.grade,
         "feedback": record.feedback,
         "reviewed_by": record.reviewed_by,
         "reviewed_at": record.reviewed_at,
+        "status": record.status,
     }

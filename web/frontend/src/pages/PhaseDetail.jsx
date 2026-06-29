@@ -41,7 +41,9 @@ export default function PhaseDetail() {
   )
 
   const status = progress?.status || 'not_started'
-  const isLocked = phaseId > 1 && prevProgress?.status !== 'completed'
+  const prevFailed = prevProgress?.grade === 'not_passed'
+  const isLocked = phaseId > 1 && (prevProgress?.status !== 'completed' || prevFailed)
+  const needsRevision = status === 'in_progress' && progress?.grade === 'not_passed'
   const sm = STATUS_META[status]
   const dc = DIFFICULTY_COLORS[phase.difficulty]
 
@@ -136,9 +138,16 @@ export default function PhaseDetail() {
         {/* Status actions */}
         <div className="flex gap-2 mt-5 flex-wrap items-center">
           {isLocked ? (
-            <div className="flex items-center gap-2 text-sm text-slate-500 bg-slate-500/10 border border-slate-500/20 rounded-lg px-4 py-2.5">
+            <div className={clsx(
+              'flex items-center gap-2 text-sm rounded-lg px-4 py-2.5',
+              prevFailed
+                ? 'text-red-600 bg-red-500/10 border border-red-500/20'
+                : 'text-slate-500 bg-slate-500/10 border border-slate-500/20'
+            )}>
               <Lock className="w-4 h-4" />
-              Complete Phase {phaseId - 1} to unlock this phase
+              {prevFailed
+                ? `Phase ${phaseId - 1} requires revision — check the admin feedback there first`
+                : `Complete Phase ${phaseId - 1} to unlock this phase`}
             </div>
           ) : (
             <>
@@ -149,10 +158,18 @@ export default function PhaseDetail() {
                 </button>
               )}
               {status === 'in_progress' && (
-                <button onClick={() => updateStatus('completed')} disabled={saving} className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-5 py-2.5 rounded-lg transition-all flex items-center gap-2 shadow-lg shadow-emerald-900/30">
-                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                  Mark Complete
-                </button>
+                <div className="flex flex-col gap-2">
+                  {needsRevision && (
+                    <p className="text-xs text-red-500 flex items-center gap-1.5">
+                      <Lock className="w-3.5 h-3.5 shrink-0" />
+                      Address the admin feedback below before resubmitting
+                    </p>
+                  )}
+                  <button onClick={() => updateStatus('completed')} disabled={saving} className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-5 py-2.5 rounded-lg transition-all flex items-center gap-2 shadow-lg shadow-emerald-900/30">
+                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                    {needsRevision ? 'Resubmit for Review' : 'Mark Complete'}
+                  </button>
+                </div>
               )}
               {status === 'completed' && (
                 <p className="text-xs text-slate-500 flex items-center gap-1.5">

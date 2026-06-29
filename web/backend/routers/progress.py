@@ -81,7 +81,7 @@ def update_progress(
 
     if new_status == models.PhaseStatus.in_progress and old_status == models.PhaseStatus.not_started and phase_id > 1:
         prev = _get_or_create(db, current_user.id, phase_id - 1)
-        if prev.status != models.PhaseStatus.completed:
+        if prev.status != models.PhaseStatus.completed or prev.grade == "not_passed":
             raise HTTPException(status_code=400, detail=f"Complete Phase {phase_id - 1} before starting Phase {phase_id}")
 
     record.status = new_status
@@ -96,6 +96,11 @@ def update_progress(
         record.started_at = now
     if new_status == models.PhaseStatus.completed:
         record.completed_at = now
+        # Clear previous review so admin re-evaluates the resubmission
+        record.grade = None
+        record.feedback = None
+        record.reviewed_by = None
+        record.reviewed_at = None
     elif new_status != models.PhaseStatus.completed:
         record.completed_at = None
 
