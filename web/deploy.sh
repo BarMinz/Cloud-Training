@@ -28,6 +28,9 @@ cp -r "$FRONTEND_DIR/dist/." "$WEBROOT/"
 echo "==> Configuring nginx..."
 mkdir -p /etc/nginx/http.d
 cp "$NGINX_CONF" /etc/nginx/http.d/cloud-training.conf
+cp "$(dirname "$0")/lab-proxy.nginx.conf" /etc/nginx/http.d/lab-proxy.conf
+# Create upstream map if it doesn't exist yet
+touch /etc/nginx/lab-upstreams.map
 # Remove default site if present
 rm -f /etc/nginx/http.d/default.conf
 

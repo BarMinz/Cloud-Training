@@ -8,7 +8,6 @@ import struct
 import subprocess
 import termios
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, Query
-from jose import JWTError
 from sqlalchemy.orm import Session
 from database import get_db
 import auth as auth_utils
@@ -17,7 +16,8 @@ import models
 router = APIRouter(prefix="/api/containers", tags=["containers"])
 
 SECONDARY_IP = "79.108.163.9"
-LAB_PORTS = (80, 443)
+DOMAIN = "cloud-training.online"
+LAB_UPSTREAMS_MAP = "/etc/nginx/lab-upstreams.map"
 
 
 def container_name(user_id: int) -> str:
@@ -35,72 +35,43 @@ def get_container_status(name: str) -> str:
     return 'not_found'
 
 
-def _free_lab_ports() -> list[int]:
-    """Return which of LAB_PORTS are not currently bound on SECONDARY_IP."""
-    free = []
-    for port in LAB_PORTS:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 0)
-            try:
-                s.bind((SECONDARY_IP, port))
-                free.append(port)
-            except OSError:
-                pass
-    return free
+def _get_container_ip(name: str) -> str:
+    result = _run(['docker', 'inspect', '--format',
+                   '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}', name])
+    return result.stdout.strip()
 
 
-def _container_bound_ports(name: str) -> list[int]:
-    """Return port numbers currently mapped to SECONDARY_IP for the given container."""
-    result = _run(['docker', 'port', name])
-    ports = []
-    for line in result.stdout.splitlines():
-        # e.g. "80/tcp -> 79.108.163.9:80"
-        if SECONDARY_IP in line:
-            try:
-                ports.append(int(line.split('/')[0]))
-            except (ValueError, IndexError):
-                pass
-    return sorted(ports)
+def _update_nginx_map(username: str, container_ip: str) -> None:
+    try:
+        try:
+            with open(LAB_UPSTREAMS_MAP) as f:
+                lines = [l for l in f.readlines() if not l.startswith(f'{username} ')]
+        except FileNotFoundError:
+            lines = []
+        if container_ip:
+            lines.append(f'{username} {container_ip};\n')
+        with open(LAB_UPSTREAMS_MAP, 'w') as f:
+            f.writelines(lines)
+        subprocess.run(['nginx', '-s', 'reload'], capture_output=True, timeout=5)
+    except Exception:
+        pass
 
 
-DOMAIN = "cloud-training.online"
-
-
-def _write_motd(name: str, bound_ports: list[int], username: str = '') -> None:
-    C, G, Y, W, R = '\033[1;36m', '\033[1;32m', '\033[1;33m', '\033[0m', '\033[1;31m'
+def _write_motd(name: str, username: str = '') -> None:
+    C, Y, W = '\033[1;36m', '\033[1;33m', '\033[0m'
     DIV = f'{C}{"─" * 54}{W}'
+    url = f'http://{username}.{DOMAIN}' if username else f'http://{SECONDARY_IP}'
 
-    subdomain = f'{username}.{DOMAIN}' if username else SECONDARY_IP
-
-    if bound_ports:
-        port_lines = ''
-        for p in bound_ports:
-            scheme = 'https' if p == 443 else 'http'
-            suffix = '' if p in (80, 443) else f':{p}'
-            port_lines += f'  Port {p:<5}  {G}→{W}  {G}{scheme}://{subdomain}{suffix}{W}\n'
-
-        motd = (
-            f'\n{DIV}\n'
-            f'{C}         Welcome to your LAMP Lab 🌐{W}\n'
-            f'{DIV}\n\n'
-            f' Your lab server is publicly accessible at:\n\n'
-            f'  Domain      {Y}→{W}  {Y}{subdomain}{W}\n'
-            f'  IP address  {Y}→{W}  {Y}{SECONDARY_IP}{W}\n'
-            f'{port_lines}\n'
-            f' Once Apache is running, open the URL in your browser to test.\n'
-            f' {C}Tip:{W} start with  apt update && apt install -y apache2\n\n'
-            f'{DIV}\n'
-        )
-    else:
-        motd = (
-            f'\n{DIV}\n'
-            f'{C}         Welcome to your LAMP Lab 🌐{W}\n'
-            f'{DIV}\n\n'
-            f' {R}⚠  Public ports are currently in use by another lab session.{W}\n'
-            f'    Test your site inside the container using curl.\n\n'
-            f' {C}Tip:{W} start with  apt update && apt install -y apache2\n\n'
-            f'{DIV}\n'
-        )
+    motd = (
+        f'\n{DIV}\n'
+        f'{C}         Welcome to your LAMP Lab 🌐{W}\n'
+        f'{DIV}\n\n'
+        f' Your lab is publicly accessible at:\n\n'
+        f'  {Y}{url}{W}\n\n'
+        f' Once Apache is running, open the URL in your browser.\n'
+        f' {C}Tip:{W} start with  apt update && apt install -y apache2\n\n'
+        f'{DIV}\n'
+    )
 
     subprocess.run(
         ['docker', 'exec', '-i', name, 'bash', '-c', 'cat > /etc/motd'],
@@ -116,11 +87,18 @@ def _write_motd(name: str, bound_ports: list[int], username: str = '') -> None:
 def ensure_container_running(name: str, username: str = '') -> bool:
     status = get_container_status(name)
     if status == 'running':
+        ip = _get_container_ip(name)
+        if username and ip:
+            _update_nginx_map(username, ip)
         return True
     if status in ('exited', 'created', 'paused'):
-        return _run(['docker', 'start', name]).returncode == 0
+        ok = _run(['docker', 'start', name]).returncode == 0
+        if ok and username:
+            ip = _get_container_ip(name)
+            if ip:
+                _update_nginx_map(username, ip)
+        return ok
     if status == 'not_found':
-        free_ports = _free_lab_ports()
         cmd = [
             'docker', 'run', '-d', '--name', name,
             '--hostname', 'lamp-server',
@@ -128,12 +106,13 @@ def ensure_container_running(name: str, username: str = '') -> bool:
             '--memory', '512m',
             '--privileged',
         ]
-        for port in free_ports:
-            cmd += ['-p', f'{SECONDARY_IP}:{port}:{port}']
         cmd += ['lamp-base:latest']
         ok = _run(cmd, timeout=30).returncode == 0
         if ok:
-            _write_motd(name, free_ports, username)
+            _write_motd(name, username)
+            ip = _get_container_ip(name)
+            if username and ip:
+                _update_nginx_map(username, ip)
         return ok
     return False
 
@@ -143,14 +122,10 @@ def start_lamp_container(current_user: models.User = Depends(auth_utils.get_curr
     name = container_name(current_user.id)
     if not ensure_container_running(name, username=current_user.username):
         raise HTTPException(status_code=500, detail="Failed to start container")
-    bound = _container_bound_ports(name)
-    subdomain = f'{current_user.username}.{DOMAIN}' if bound else None
     return {
         "status": get_container_status(name),
         "container": name,
-        "public_ip": SECONDARY_IP if bound else None,
-        "subdomain": subdomain,
-        "bound_ports": bound,
+        "url": f'http://{current_user.username}.{DOMAIN}',
     }
 
 
@@ -164,6 +139,7 @@ def get_lamp_status(current_user: models.User = Depends(auth_utils.get_current_u
 def remove_lamp_container(current_user: models.User = Depends(auth_utils.get_current_user)):
     name = container_name(current_user.id)
     _run(['docker', 'rm', '-f', name])
+    _update_nginx_map(current_user.username, '')
     return {"status": "removed"}
 
 
@@ -185,7 +161,6 @@ async def admin_lamp_terminal(websocket: WebSocket, user_id: int, token: str = Q
         await websocket.close(code=4001)
         return
 
-    # Verify the token holder is an admin
     from database import SessionLocal
     db = SessionLocal()
     try:
@@ -211,7 +186,6 @@ async def admin_lamp_terminal(websocket: WebSocket, user_id: int, token: str = Q
 
 
 async def _run_terminal_session(websocket: WebSocket, name: str, loop):
-    """Shared PTY bridge logic used by both user and admin terminal endpoints."""
     master_fd, slave_fd = pty.openpty()
     proc = None
     try:
