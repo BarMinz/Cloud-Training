@@ -182,6 +182,8 @@ export default function Admin() {
         feedback: reviewForm.feedback,
       })
       setReviewForm((f) => ({ ...f, saving: false, saved: true, editing: false }))
+      window.dispatchEvent(new CustomEvent('pending-reviews-changed'))
+      setSummary((s) => s ? { ...s, pending_reviews: Math.max(0, (s.pending_reviews ?? 1) - 1) } : s)
       // Update cached user detail so Review badge refreshes without reload
       setUserDetail((d) => {
         const prev = d[phaseReview.userId]
@@ -462,6 +464,8 @@ export default function Admin() {
                                     if (!confirm(`Reset Phase ${p.phase_id} for ${user.username}?`)) return
                                     try {
                                       await api.post(`/admin/users/${user.id}/progress/${p.phase_id}/reset`)
+                                      window.dispatchEvent(new CustomEvent('pending-reviews-changed'))
+                                      if (isCompleted && !p.grade) setSummary((s) => s ? { ...s, pending_reviews: Math.max(0, (s.pending_reviews ?? 1) - 1) } : s)
                                       const updated = await api.get(`/admin/users/${user.id}`)
                                       setUserDetail((d) => ({ ...d, [user.id]: updated }))
                                       setUsers((prev) => prev.map((u) =>

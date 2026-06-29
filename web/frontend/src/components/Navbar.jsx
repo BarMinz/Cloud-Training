@@ -17,14 +17,18 @@ export default function Navbar() {
 
   useEffect(() => {
     if (!isAdmin(user?.role)) return
-    const fetch = () => {
+    const refresh = () => {
       api.get('/admin/analytics/summary')
         .then((d) => setPendingReviews(d.pending_reviews ?? 0))
         .catch(() => {})
     }
-    fetch()
-    const id = setInterval(fetch, 60_000)
-    return () => clearInterval(id)
+    refresh()
+    const id = setInterval(refresh, 60_000)
+    window.addEventListener('pending-reviews-changed', refresh)
+    return () => {
+      clearInterval(id)
+      window.removeEventListener('pending-reviews-changed', refresh)
+    }
   }, [user])
 
   const handleLogout = () => { logout(); navigate('/login') }
