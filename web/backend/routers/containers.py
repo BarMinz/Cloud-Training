@@ -123,7 +123,17 @@ def ensure_container_running(name: str, username: str = '') -> bool:
 
 
 @router.post("/lamp")
-def start_lamp_container(current_user: models.User = Depends(auth_utils.get_current_user)):
+def start_lamp_container(
+    current_user: models.User = Depends(auth_utils.get_current_user),
+    db: Session = Depends(get_db),
+):
+    phase2 = db.query(models.PhaseProgress).filter(
+        models.PhaseProgress.user_id == current_user.id,
+        models.PhaseProgress.phase_id == 2,
+    ).first()
+    if phase2 and phase2.status == models.PhaseStatus.completed:
+        raise HTTPException(status_code=403, detail="phase_completed")
+
     name = container_name(current_user.id)
     if not ensure_container_running(name, username=current_user.username):
         raise HTTPException(status_code=500, detail="Failed to start container")
@@ -157,8 +167,22 @@ def admin_get_lamp_status(
     return {"status": get_container_status(name), "container": name, "user_id": user_id}
 
 
+@router.delete("/admin/{user_id}/lamp")
+def admin_terminate_lamp(
+    user_id: int,
+    db: Session = Depends(get_db),
+    admin: models.User = Depends(auth_utils.require_admin),
+):
+    name = container_name(user_id)
+    target = db.query(models.User).filter(models.User.id == user_id).first()
+    _run(['docker', 'rm', '-f', name])
+    if target:
+        _update_nginx_map(target.username, '')
+    return {"status": "terminated"}
+
+
 @router.websocket("/admin/{user_id}/lamp/terminal")
-async def admin_lamp_terminal(websocket: WebSocket, user_id: int, token: str = Query(...)):
+async def admin_lamp_terminal(websocket: WebSocket, user_id: int, token: str = Query(...), cols: int = Query(80), rows: int = Query(24)):
     try:
         payload = auth_utils.decode_token(token)
         admin_id = int(payload.get("sub"))
@@ -175,23 +199,37 @@ async def admin_lamp_terminal(websocket: WebSocket, user_id: int, token: str = Q
             return
         target_user = db.query(models.User).filter(models.User.id == user_id).first()
         target_username = target_user.username if target_user else ''
+        phase2 = db.query(models.PhaseProgress).filter(
+            models.PhaseProgress.user_id == user_id,
+            models.PhaseProgress.phase_id == 2,
+        ).first()
+        phase_completed = phase2 and phase2.status == models.PhaseStatus.completed
     finally:
         db.close()
 
     name = container_name(user_id)
     loop = asyncio.get_event_loop()
 
-    ok = await loop.run_in_executor(None, lambda: ensure_container_running(name, username=target_username))
-    if not ok:
-        await websocket.close(code=4002)
-        return
+    if phase_completed:
+        # Don't spin up a new container for a completed phase — only connect if already running
+        if get_container_status(name) != 'running':
+            await websocket.close(code=4002)
+            return
+    else:
+        ok = await loop.run_in_executor(None, lambda: ensure_container_running(name, username=target_username))
+        if not ok:
+            await websocket.close(code=4002)
+            return
 
     await websocket.accept()
-    await _run_terminal_session(websocket, name=name, loop=loop)
+    await _run_terminal_session(websocket, name=name, loop=loop, initial_cols=cols, initial_rows=rows)
 
 
-async def _run_terminal_session(websocket: WebSocket, name: str, loop):
+async def _run_terminal_session(websocket: WebSocket, name: str, loop, initial_cols: int = 80, initial_rows: int = 24):
     master_fd, slave_fd = pty.openpty()
+    # Set PTY size before spawning so bash starts with correct dimensions
+    winsize = struct.pack('HHHH', max(1, initial_rows), max(1, initial_cols), 0, 0)
+    fcntl.ioctl(master_fd, termios.TIOCSWINSZ, winsize)
     proc = None
     try:
         proc = await asyncio.create_subprocess_exec(
@@ -257,13 +295,26 @@ async def _run_terminal_session(websocket: WebSocket, name: str, loop):
 
 
 @router.websocket("/lamp/terminal")
-async def lamp_terminal(websocket: WebSocket, token: str = Query(...)):
+async def lamp_terminal(websocket: WebSocket, token: str = Query(...), cols: int = Query(80), rows: int = Query(24)):
     try:
         payload = auth_utils.decode_token(token)
         user_id = int(payload.get("sub"))
     except Exception:
         await websocket.close(code=4001)
         return
+
+    from database import SessionLocal
+    db = SessionLocal()
+    try:
+        phase2 = db.query(models.PhaseProgress).filter(
+            models.PhaseProgress.user_id == user_id,
+            models.PhaseProgress.phase_id == 2,
+        ).first()
+        if phase2 and phase2.status == models.PhaseStatus.completed:
+            await websocket.close(code=4003)
+            return
+    finally:
+        db.close()
 
     name = container_name(user_id)
     loop = asyncio.get_event_loop()
@@ -274,4 +325,4 @@ async def lamp_terminal(websocket: WebSocket, token: str = Query(...)):
         return
 
     await websocket.accept()
-    await _run_terminal_session(websocket, name=name, loop=loop)
+    await _run_terminal_session(websocket, name=name, loop=loop, initial_cols=cols, initial_rows=rows)

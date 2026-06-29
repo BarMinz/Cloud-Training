@@ -114,26 +114,34 @@ export default function AdminLampTerminal() {
       return
     }
 
+    const term = xtermRef.current
+    const fitAddon = fitAddonRef.current
+
+    // Compute dimensions before opening WS so backend can size the PTY from the start
+    await document.fonts.ready
+    fitAddon.fit()
+    const initCols = term.cols || 80
+    const initRows = term.rows || 24
+
     const token = localStorage.getItem('token')
     const proto = window.location.protocol === 'https:' ? 'wss' : 'ws'
     const host = window.location.host
     const ws = new WebSocket(
-      `${proto}://${host}/api/containers/admin/${userId}/lamp/terminal?token=${token}`
+      `${proto}://${host}/api/containers/admin/${userId}/lamp/terminal?token=${token}&cols=${initCols}&rows=${initRows}`
     )
     ws.binaryType = 'arraybuffer'
     wsRef.current = ws
-
-    const term = xtermRef.current
-    const fitAddon = fitAddonRef.current
 
     ws.onopen = () => {
       setWsConnected(true)
       setContainerStatus('running')
       term.clear()
-      document.fonts.ready.then(() => {
+      term.focus()
+      requestAnimationFrame(() => {
         fitAddon.fit()
-        ws.send(JSON.stringify({ type: 'resize', rows: term.rows, cols: term.cols }))
-        term.focus()
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: 'resize', rows: term.rows, cols: term.cols }))
+        }
       })
     }
 

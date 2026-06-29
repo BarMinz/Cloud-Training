@@ -31,6 +31,7 @@ export default function LampLab() {
   const [containerStatus, setContainerStatus] = useState('starting')
   const [wsConnected, setWsConnected] = useState(false)
   const [error, setError] = useState(null)
+  const [phaseCompleted, setPhaseCompleted] = useState(false)
 
   // ── Initialize xterm ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -106,29 +107,45 @@ export default function LampLab() {
     try {
       await api.post('/containers/lamp')
       setContainerStatus('running')
-    } catch {
+    } catch (err) {
+      if (err.message === 'phase_completed') {
+        setPhaseCompleted(true)
+        setContainerStatus('stopped')
+        return
+      }
       setError('Failed to start container. Is Docker running?')
       setContainerStatus('error')
       return
     }
 
+    const term = xtermRef.current
+    const fitAddon = fitAddonRef.current
+
+    // Compute dimensions before opening WS so backend can size the PTY from the start
+    await document.fonts.ready
+    fitAddon.fit()
+    const initCols = term.cols || 80
+    const initRows = term.rows || 24
+
     const token = localStorage.getItem('token')
     const proto = window.location.protocol === 'https:' ? 'wss' : 'ws'
     const host = window.location.host
-    const ws = new WebSocket(`${proto}://${host}/api/containers/lamp/terminal?token=${token}`)
+    const ws = new WebSocket(
+      `${proto}://${host}/api/containers/lamp/terminal?token=${token}&cols=${initCols}&rows=${initRows}`
+    )
     ws.binaryType = 'arraybuffer'
     wsRef.current = ws
-
-    const term = xtermRef.current
-    const fitAddon = fitAddonRef.current
 
     ws.onopen = () => {
       setWsConnected(true)
       term.clear()
-      document.fonts.ready.then(() => {
+      term.focus()
+      // Re-fit in case layout changed while WS was connecting
+      requestAnimationFrame(() => {
         fitAddon.fit()
-        ws.send(JSON.stringify({ type: 'resize', rows: term.rows, cols: term.cols }))
-        term.focus()
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: 'resize', rows: term.rows, cols: term.cols }))
+        }
       })
     }
 
@@ -227,8 +244,17 @@ export default function LampLab() {
         </div>
       )}
 
+      {/* Phase completed overlay */}
+      {phaseCompleted && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0f1117]/90 z-10 gap-3">
+          <CheckCircle2 className="w-10 h-10 text-emerald-400" />
+          <p className="text-slate-200 text-sm font-semibold">Phase 2 Completed</p>
+          <p className="text-slate-500 text-xs text-center max-w-xs">Your lab has been reviewed and closed.<br />Contact your admin if you need access restored.</p>
+        </div>
+      )}
+
       {/* Loading overlay */}
-      {containerStatus === 'starting' && !wsConnected && (
+      {!phaseCompleted && containerStatus === 'starting' && !wsConnected && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0f1117]/90 z-10 gap-3">
           <Loader2 className="w-8 h-8 text-emerald-400 animate-spin" />
           <p className="text-slate-300 text-sm">Starting your LAMP container…</p>
