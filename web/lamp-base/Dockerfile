@@ -5,7 +5,6 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
     systemd systemd-sysv \
     nano vim \
-    apache2 \
     curl wget \
     net-tools iputils-ping \
     && apt-get clean && rm -rf /var/lib/apt/lists/*

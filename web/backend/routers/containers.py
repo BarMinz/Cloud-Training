@@ -88,7 +88,7 @@ def _write_motd(name: str, bound_ports: list[int], username: str = '') -> None:
             f'  IP address  {Y}→{W}  {Y}{SECONDARY_IP}{W}\n'
             f'{port_lines}\n'
             f' Once Apache is running, open the URL in your browser to test.\n'
-            f' {C}Tip:{W} run  systemctl start apache2  to bring Apache up\n\n'
+            f' {C}Tip:{W} start with  apt update && apt install -y apache2\n\n'
             f'{DIV}\n'
         )
     else:
@@ -98,7 +98,7 @@ def _write_motd(name: str, bound_ports: list[int], username: str = '') -> None:
             f'{DIV}\n\n'
             f' {R}⚠  Public ports are currently in use by another lab session.{W}\n'
             f'    Test your site inside the container using curl.\n\n'
-            f' {C}Tip:{W} run  systemctl start apache2  to bring Apache up\n\n'
+            f' {C}Tip:{W} start with  apt update && apt install -y apache2\n\n'
             f'{DIV}\n'
         )
 
