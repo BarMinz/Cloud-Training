@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import Navbar from './components/Navbar'
+import ChatWidget from './components/ChatWidget'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import PhaseDetail from './pages/PhaseDetail'
@@ -25,6 +26,7 @@ function ProtectedLayout() {
       <main className="pt-14 min-h-screen">
         <Outlet />
       </main>
+      <ChatWidget />
     </>
   )
 }

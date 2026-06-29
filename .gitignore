@@ -27,3 +27,6 @@ web/frontend/.vite/
 
 # Logs
 *.log
+
+# Backup files
+*.bak

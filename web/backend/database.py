@@ -35,6 +35,13 @@ def run_migrations(engine):
         if "reviewed_at" not in cols:
             conn.execute(text("ALTER TABLE phase_progress ADD COLUMN reviewed_at DATETIME"))
             conn.commit()
+        result = conn.execute(text("PRAGMA table_info(chat_messages)"))
+        cmcols = {row[1] for row in result.fetchall()}
+        if cmcols and "recipient_id" not in cmcols:
+            conn.execute(text("ALTER TABLE chat_messages ADD COLUMN recipient_id INTEGER"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_chat_messages_recipient_id ON chat_messages(recipient_id)"))
+            conn.commit()
+
 
 
 class Base(DeclarativeBase):

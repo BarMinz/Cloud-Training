@@ -78,3 +78,21 @@
     border-color: rgba(255, 255, 255, 0.08);
   }
 }
+
+@layer utilities {
+  .holo {
+    background: linear-gradient(90deg, #f43f5e, #a855f7, #3b82f6, #06b6d4, #10b981, #f59e0b, #f43f5e);
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    animation: holo-shine 3s linear infinite;
+    text-shadow: 0 0 8px rgba(168, 85, 247, 0.25);
+    font-weight: 600;
+  }
+  @keyframes holo-shine {
+    from { background-position: 0% 50%; }
+    to   { background-position: 200% 50%; }
+  }
+}

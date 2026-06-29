@@ -49,3 +49,15 @@ class PhaseProgress(Base):
     reviewed_at = Column(DateTime(timezone=True), nullable=True)
 
     user = relationship("User", foreign_keys=[user_id], back_populates="progress")
+
+
+class ChatMessage(Base):
+    __tablename__ = "chat_messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    recipient_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    username = Column(String, nullable=False)
+    avatar = Column(String, nullable=True)
+    content = Column(Text, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
