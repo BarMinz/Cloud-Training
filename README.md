@@ -211,8 +211,6 @@ cd web/frontend && npm run build && cp -r dist/. /var/www/cloud-training/ && rc-
 | POST | `/api/chat/mark-read` | Bearer | Mark conversation as read |
 | WS | `/api/chat/ws` | Bearer (token param) | Real-time WebSocket chat |
 
-Interactive API docs: https://cloud-training.online/api/docs
-
 ---
 
 ## Business Rules
