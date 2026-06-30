@@ -1,10 +1,15 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { api } from '../api/client'
-import { PHASES, DIFFICULTY_COLORS, STATUS_META } from '../data/phases'
+import { DIFFICULTY_COLORS, STATUS_META } from '../data/phases'
+import { usePhases } from '../contexts/PhasesContext'
+import { useAuth } from '../contexts/AuthContext'
+import PhaseEditor from '../components/PhaseEditor'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import {
   ArrowLeft, CheckCircle2, Circle, Clock, Target, Lightbulb,
-  ChevronRight, Loader2, Save, MonitorPlay, Lock, MessageSquare
+  ChevronRight, Loader2, Save, MonitorPlay, Lock, MessageSquare, Edit3
 } from 'lucide-react'
 import clsx from 'clsx'
 
@@ -12,6 +17,10 @@ export default function PhaseDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const phaseId = parseInt(id)
+  const { phases: PHASES, loading: phasesLoading, refresh: refreshPhases } = usePhases()
+  const { user } = useAuth()
+  const [editing, setEditing] = useState(false)
+  const isAdmin = user?.role === 'admin' || user?.role === 'main_admin'
   const phase = PHASES.find((p) => p.id === phaseId)
 
   const [progress, setProgress] = useState(null)
@@ -33,16 +42,23 @@ export default function PhaseDetail() {
       .catch(console.error)
   }, [phaseId])
 
-  if (!phase) return (
-    <div className="flex flex-col items-center justify-center h-64 gap-4">
-      <p className="text-slate-400">Phase not found.</p>
-      <Link to="/dashboard" className="btn-primary">Back to Dashboard</Link>
-    </div>
-  )
+  if (!phase) {
+    if (phasesLoading) return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-6 h-6 text-brand-400 animate-spin" />
+      </div>
+    )
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-4">
+        <p className="text-slate-400">Phase not found.</p>
+        <Link to="/dashboard" className="btn-primary">Back to Dashboard</Link>
+      </div>
+    )
+  }
 
   const status = progress?.status || 'not_started'
   const prevFailed = prevProgress?.grade === 'not_passed'
-  const isLocked = phaseId > 1 && (prevProgress?.status !== 'completed' || prevFailed)
+  const isLocked = !isAdmin && phaseId > 1 && (prevProgress?.status !== 'completed' || prevFailed)
   const needsRevision = status === 'in_progress' && progress?.grade === 'not_passed'
   const sm = STATUS_META[status]
   const dc = DIFFICULTY_COLORS[phase.difficulty]
@@ -76,12 +92,35 @@ export default function PhaseDetail() {
   const prev = PHASES.find((p) => p.id === phaseId - 1)
   const next = PHASES.find((p) => p.id === phaseId + 1)
 
+  if (editing) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-8 animate-fade-in">
+        <button onClick={() => setEditing(false)} className="flex items-center gap-1.5 text-slate-400 hover:text-slate-200 text-sm mb-6 transition-colors">
+          <ArrowLeft className="w-4 h-4" /> Back to read view
+        </button>
+        <h1 className="text-lg font-semibold text-white mb-4">Editing Phase {phase.id}</h1>
+        <PhaseEditor
+          phase={phase}
+          onSaved={async () => { await refreshPhases(); setEditing(false) }}
+          onCancel={() => setEditing(false)}
+        />
+      </div>
+    )
+  }
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 animate-fade-in">
-      {/* Back */}
-      <button onClick={() => navigate('/dashboard')} className="flex items-center gap-1.5 text-slate-400 hover:text-slate-200 text-sm mb-6 transition-colors">
-        <ArrowLeft className="w-4 h-4" /> Back to Dashboard
-      </button>
+      {/* Back + Edit */}
+      <div className="flex items-center justify-between mb-6">
+        <button onClick={() => navigate('/dashboard')} className="flex items-center gap-1.5 text-slate-400 hover:text-slate-200 text-sm transition-colors">
+          <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+        </button>
+        {isAdmin && (
+          <button onClick={() => setEditing(true)} className="inline-flex items-center gap-1.5 text-xs font-medium text-brand-300 hover:text-white bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-md border border-white/10 transition-colors">
+            <Edit3 className="w-3.5 h-3.5" /> Edit phase
+          </button>
+        )}
+      </div>
 
       {/* Header */}
       <div className="card p-6 mb-6 relative overflow-hidden">
@@ -106,7 +145,9 @@ export default function PhaseDetail() {
           </div>
         </div>
 
-        <p className="mt-4 text-slate-300 leading-relaxed">{phase.description}</p>
+        <div className="md-preview mt-4">
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{phase.description || ''}</ReactMarkdown>
+        </div>
 
         {/* Phase 1 simulation launcher */}
         {phaseId === 1 && status !== 'not_started' && (

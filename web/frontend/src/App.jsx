@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { PhasesProvider } from './contexts/PhasesContext'
 import { ThemeProvider } from './contexts/ThemeContext'
 import Navbar from './components/Navbar'
 import ChatWidget from './components/ChatWidget'
@@ -24,13 +25,13 @@ function ProtectedLayout() {
   )
   if (!user) return <Navigate to="/login" replace />
   return (
-    <>
+    <PhasesProvider>
       <Navbar />
       <main className="pt-14 min-h-screen">
         <Outlet />
       </main>
       <ChatWidget />
-    </>
+    </PhasesProvider>
   )
 }
 

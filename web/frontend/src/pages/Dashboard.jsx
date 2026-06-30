@@ -3,10 +3,11 @@ import { useAuth } from '../contexts/AuthContext'
 import { api } from '../api/client'
 import PhaseCard from '../components/PhaseCard'
 import ProgressRing from '../components/ProgressRing'
-import { PHASES } from '../data/phases'
+import { usePhases } from '../contexts/PhasesContext'
 import { CheckCircle2, Loader2, Zap, Trophy, BookOpen, AlertTriangle } from 'lucide-react'
 
 export default function Dashboard() {
+  const { phases: PHASES } = usePhases()
   const { user } = useAuth()
   const [progress, setProgress] = useState([])
   const [loading, setLoading] = useState(true)
@@ -20,7 +21,9 @@ export default function Dashboard() {
 
   const getProgress = (phaseId) => progress.find((p) => p.phase_id === phaseId)
 
+  const isAdmin = user?.role === 'admin' || user?.role === 'main_admin'
   const isLocked = (phaseId) => {
+    if (isAdmin) return false
     if (phaseId === 1) return false
     const prev = getProgress(phaseId - 1)
     return prev?.status !== 'completed' || prev?.grade === 'not_passed'

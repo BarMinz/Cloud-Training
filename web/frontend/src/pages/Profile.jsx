@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { api } from '../api/client'
 import { User, Mail, Calendar, Lock, Loader2, CheckCircle2, Eye, EyeOff, Camera, Pencil, X } from 'lucide-react'
-import { PHASES } from '../data/phases'
+import { usePhases } from '../contexts/PhasesContext'
 import ProgressRing from '../components/ProgressRing'
 import clsx from 'clsx'
 
@@ -21,6 +21,7 @@ function SuccessBadge({ message }) {
 }
 
 export default function Profile() {
+  const { phases: PHASES } = usePhases()
   const { user, refreshUser } = useAuth()
   const fileInputRef = useRef(null)
 

@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../api/client'
 import { useAuth } from '../contexts/AuthContext'
-import { PHASES, STATUS_META } from '../data/phases'
+import { STATUS_META } from '../data/phases'
+import { usePhases } from '../contexts/PhasesContext'
 import { SIMULATION_TICKETS, PRIORITY_META } from '../data/simulationTickets'
 import ProgressRing from '../components/ProgressRing'
 import {
@@ -14,6 +15,7 @@ import { DIFFICULTY_COLORS } from '../data/phases'
 import clsx from 'clsx'
 
 export default function Admin() {
+  const { phases: PHASES } = usePhases()
   const navigate = useNavigate()
   const { user: currentUser } = useAuth()
   const [users, setUsers] = useState([])
