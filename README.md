@@ -2,7 +2,7 @@
 
 A 10-phase hands-on training portal for new employees covering Linux, networking, Windows infrastructure, and AI-assisted workflows. Trainees work through interactive phases at their own pace; admins track progress and review submissions in real time.
 
-**Live:** http://79.108.163.7
+**Live:** https://cloud-training.online
 
 ---
 
@@ -12,9 +12,14 @@ A 10-phase hands-on training portal for new employees covering Linux, networking
 - Per-phase progress tracking with status, notes, and timestamps
 - Interactive labs: Phase 1 ticket simulation, Phase 2 browser-based LAMP terminal (xterm.js + Docker)
 - Admin dashboard: user management, analytics, and per-phase grade/feedback review
-- Phase unlock enforcement — each phase requires the previous one to be completed
+- Phase unlock enforcement — each phase requires the previous one to be passed
+- Grade gate: a `not_passed` grade blocks the next phase until the employee resubmits
 - JWT authentication with role-based access (`employee`, `admin`, `main_admin`)
 - Admin accounts are protected from accidental deletion
+- Real-time in-app chat between employees and admins (WebSocket)
+- Grade notification emails sent to employees via Gmail SMTP
+- Pending-review badge on admin dashboard with instant updates
+- Dark/light mode toggle
 
 ---
 
@@ -27,6 +32,8 @@ A 10-phase hands-on training portal for new employees covering Linux, networking
 | Web server | nginx (static files + reverse proxy) |
 | Auth | JWT (python-jose) + bcrypt |
 | Terminal labs | xterm.js + Docker PTY over WebSocket |
+| Real-time chat | WebSocket (`/api/chat/ws`) |
+| Email | Gmail SMTP via `smtplib` |
 
 ---
 
@@ -42,21 +49,32 @@ cloud-training/
 │   │   ├── database.py         # SQLAlchemy setup + runtime migrations
 │   │   ├── models.py           # User, PhaseProgress ORM models
 │   │   ├── auth.py             # JWT creation/verification, password hashing
+│   │   ├── email_utils.py      # Gmail SMTP helpers for grade notifications
 │   │   ├── requirements.txt
 │   │   └── routers/
 │   │       ├── auth.py         # POST /api/auth/login|register, GET /api/auth/me
 │   │       ├── progress.py     # GET/PUT /api/progress/
 │   │       ├── admin.py        # User management, phase review/reset
 │   │       ├── analytics.py    # Admin analytics endpoints
+│   │       ├── chat.py         # Real-time WebSocket chat
 │   │       └── containers.py   # Docker PTY for LAMP lab (WebSocket)
 │   └── frontend/
 │       └── src/
 │           ├── App.jsx         # Router and route guards
+│           ├── contexts/
+│           │   ├── AuthContext.jsx
+│           │   └── ThemeContext.jsx   # Dark/light mode
+│           ├── components/
+│           │   ├── ChatWidget.jsx     # Floating chat bubble (all pages)
+│           │   ├── Navbar.jsx
+│           │   ├── PhaseCard.jsx
+│           │   └── ProgressRing.jsx
 │           ├── pages/
 │           │   ├── Dashboard.jsx
 │           │   ├── PhaseDetail.jsx
 │           │   ├── TicketSimulation.jsx  # Phase 1 interactive lab
 │           │   ├── LampLab.jsx           # Phase 2 terminal lab
+│           │   ├── Profile.jsx           # User profile page
 │           │   ├── Admin.jsx
 │           │   └── AdminLampTerminal.jsx # Admin view of lab sessions
 │           └── data/
@@ -155,7 +173,13 @@ cd web/frontend && npm run build && cp -r dist/. /var/www/cloud-training/ && rc-
 | GET | `/api/admin/analytics/users` | User progress table |
 | GET | `/api/admin/analytics/cohorts` | Progress grouped by join month |
 
-Interactive API docs: http://79.108.163.7/api/docs
+### Chat
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/chat/history` | Bearer | Fetch recent chat messages |
+| WS | `/api/chat/ws` | Bearer (token param) | Real-time WebSocket chat |
+
+Interactive API docs: https://cloud-training.online/api/docs
 
 ---
 
@@ -165,7 +189,8 @@ Interactive API docs: http://79.108.163.7/api/docs
 - Admin accounts cannot be deleted — demote to `employee` first
 - Admins cannot change their own role or delete themselves
 - The `main_admin` role is immutable — cannot be assigned or removed via the API
-- Phase N cannot be started until Phase N−1 is completed
+- Phase N cannot be started until Phase N−1 is **passed** (grade = `passed`)
+- A `not_passed` grade locks the current phase — employee must resubmit for re-review
 
 ---
 
