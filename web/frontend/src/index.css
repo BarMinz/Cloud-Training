@@ -188,3 +188,40 @@ html.light .text-violet-400                                              { color
 
 /* sky-300/90 used in hint bubble */
 html.light .text-sky-300\/90 { color: rgba(3,105,161,0.9) !important; }
+
+/* --- Markdown preview (phase description) --- */
+.md-preview { color: #cbd5e1; line-height: 1.6; }
+.md-preview h1, .md-preview h2, .md-preview h3, .md-preview h4 { color: #f1f5f9; font-weight: 700; margin: 1.1em 0 0.5em; line-height: 1.25; }
+.md-preview h1 { font-size: 1.5rem; }
+.md-preview h2 { font-size: 1.25rem; }
+.md-preview h3 { font-size: 1.1rem; }
+.md-preview h4 { font-size: 1rem; }
+.md-preview p { margin: 0.7em 0; }
+.md-preview a { color: #818cf8; text-decoration: underline; }
+.md-preview a:hover { color: #a5b4fc; }
+.md-preview strong { color: #f1f5f9; font-weight: 700; }
+.md-preview em { color: #e2e8f0; font-style: italic; }
+.md-preview code { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 0.1em 0.35em; font-size: 0.85em; color: #fcd34d; }
+.md-preview pre { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 0.9em 1em; overflow-x: auto; margin: 0.8em 0; }
+.md-preview pre code { background: transparent; border: 0; padding: 0; color: #e2e8f0; font-size: 0.85em; }
+.md-preview ul, .md-preview ol { margin: 0.6em 0; padding-left: 1.4em; }
+.md-preview ul { list-style: disc; }
+.md-preview ol { list-style: decimal; }
+.md-preview li { margin: 0.25em 0; }
+.md-preview blockquote { border-left: 3px solid #6366f1; padding: 0.2em 1em; color: #cbd5e1; background: rgba(99,102,241,0.05); margin: 0.8em 0; border-radius: 0 6px 6px 0; }
+.md-preview img { max-width: 100%; height: auto; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); margin: 0.8em 0; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+.md-preview hr { border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 1.4em 0; }
+.md-preview table { border-collapse: collapse; margin: 0.8em 0; font-size: 0.9em; }
+.md-preview th, .md-preview td { border: 1px solid rgba(255,255,255,0.12); padding: 0.4em 0.7em; text-align: left; }
+.md-preview th { background: rgba(255,255,255,0.05); color: #f1f5f9; font-weight: 600; }
+.md-preview input[type="checkbox"] { margin-right: 0.4em; accent-color: #6366f1; }
+
+html.light .md-preview { color: #334155; }
+html.light .md-preview h1, html.light .md-preview h2, html.light .md-preview h3, html.light .md-preview h4 { color: #0f172a; }
+html.light .md-preview a { color: #4f46e5; }
+html.light .md-preview code { background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.1); color: #b45309; }
+html.light .md-preview pre { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.08); }
+html.light .md-preview pre code { color: #1e293b; }
+html.light .md-preview th { background: rgba(0,0,0,0.04); color: #0f172a; }
+html.light .md-preview th, html.light .md-preview td { border-color: rgba(0,0,0,0.12); }
+html.light .md-preview img { border-color: rgba(0,0,0,0.1); box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
