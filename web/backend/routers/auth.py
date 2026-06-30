@@ -3,11 +3,12 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional
-from datetime import datetime
-import os, time
+from datetime import datetime, timezone, timedelta
+import os, time, secrets
 from database import get_db
 import models
 import auth as auth_utils
+import email_utils
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -42,6 +43,15 @@ class PasswordChange(BaseModel):
 class EmailChange(BaseModel):
     email: str
     current_password: str
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
 
 
 class TokenResponse(BaseModel):
@@ -147,3 +157,52 @@ async def upload_avatar(
     current_user.avatar = f"/avatars/{filename}"
     db.commit()
     return {"avatar": current_user.avatar}
+
+
+@router.post("/forgot-password", status_code=200)
+def forgot_password(body: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.email == body.email).first()
+    # Always return 200 to avoid leaking which emails are registered
+    if user:
+        # Invalidate any existing unused tokens for this user
+        db.query(models.PasswordResetToken).filter(
+            models.PasswordResetToken.user_id == user.id,
+            models.PasswordResetToken.used == False,
+        ).update({"used": True})
+        db.commit()
+
+        token = secrets.token_urlsafe(32)
+        expires = datetime.now(timezone.utc) + timedelta(hours=1)
+        db.add(models.PasswordResetToken(user_id=user.id, token=token, expires_at=expires))
+        db.commit()
+
+        reset_url = f"{email_utils.APP_URL}/reset-password?token={token}"
+        email_utils.send_password_reset(user.email, user.username, reset_url)
+
+    return {"ok": True}
+
+
+@router.post("/reset-password", status_code=200)
+def reset_password(body: ResetPasswordRequest, db: Session = Depends(get_db)):
+    record = db.query(models.PasswordResetToken).filter(
+        models.PasswordResetToken.token == body.token,
+        models.PasswordResetToken.used == False,
+    ).first()
+
+    if not record:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset link")
+
+    if datetime.now(timezone.utc) > record.expires_at.replace(tzinfo=timezone.utc):
+        raise HTTPException(status_code=400, detail="Reset link has expired")
+
+    if len(body.new_password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+
+    user = db.query(models.User).filter(models.User.id == record.user_id).first()
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset link")
+
+    user.password_hash = auth_utils.hash_password(body.new_password)
+    record.used = True
+    db.commit()
+    return {"ok": True}

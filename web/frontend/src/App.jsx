@@ -4,6 +4,8 @@ import { ThemeProvider } from './contexts/ThemeContext'
 import Navbar from './components/Navbar'
 import ChatWidget from './components/ChatWidget'
 import Login from './pages/Login'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
 import Dashboard from './pages/Dashboard'
 import PhaseDetail from './pages/PhaseDetail'
 import Admin from './pages/Admin'
@@ -53,6 +55,8 @@ export default function App() {
         <Routes>
           <Route element={<GuestGuard />}>
             <Route path="/login" element={<Login />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
           </Route>
           <Route element={<ProtectedLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />

@@ -5,7 +5,8 @@ from typing import List, Set, Dict, Optional
 
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect, HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy import or_, and_
+from sqlalchemy import or_, and_, func
+from pydantic import BaseModel
 from jose import JWTError
 
 from database import get_db, SessionLocal
@@ -157,6 +158,114 @@ def dm_history(
     )
     rows.reverse()
     return [_serialize(r) for r in rows]
+
+
+class MarkReadRequest(BaseModel):
+    convo_key: str
+
+
+def _last_read(db: Session, user_id: int, convo_key: str) -> int:
+    pos = db.query(models.ChatReadPosition).filter_by(user_id=user_id, convo_key=convo_key).first()
+    return pos.last_message_id if pos else 0
+
+
+def _upsert_read(db: Session, user_id: int, convo_key: str, last_id: int) -> None:
+    pos = db.query(models.ChatReadPosition).filter_by(user_id=user_id, convo_key=convo_key).first()
+    if pos:
+        if last_id > pos.last_message_id:
+            pos.last_message_id = last_id
+    else:
+        db.add(models.ChatReadPosition(user_id=user_id, convo_key=convo_key, last_message_id=last_id))
+    db.commit()
+
+
+@router.get("/unread")
+def unread_counts(
+    current_user: models.User = Depends(auth_utils.get_current_user),
+    db: Session = Depends(get_db),
+):
+    me = current_user.id
+    result = {}
+
+    # Public channel
+    last_id = _last_read(db, me, "public")
+    count = db.query(models.ChatMessage).filter(
+        models.ChatMessage.recipient_id.is_(None),
+        models.ChatMessage.id > last_id,
+        models.ChatMessage.user_id != me,
+    ).count()
+    if count:
+        result["public"] = count
+
+    # DM conversations involving this user
+    other_ids = db.query(
+        func.coalesce(
+            func.nullif(models.ChatMessage.recipient_id, me),
+            models.ChatMessage.user_id,
+        )
+    ).filter(
+        models.ChatMessage.recipient_id.isnot(None),
+        or_(
+            models.ChatMessage.user_id == me,
+            models.ChatMessage.recipient_id == me,
+        ),
+        models.ChatMessage.user_id != me,  # messages from others or sent by me
+    ).distinct().all()
+
+    # Also include conversations where I sent the first message
+    sent_ids = db.query(models.ChatMessage.recipient_id).filter(
+        models.ChatMessage.user_id == me,
+        models.ChatMessage.recipient_id.isnot(None),
+    ).distinct().all()
+
+    all_other_ids = set(r[0] for r in other_ids) | set(r[0] for r in sent_ids)
+
+    for other_id in all_other_ids:
+        if other_id is None or other_id == me:
+            continue
+        key = str(other_id)
+        last_id = _last_read(db, me, key)
+        count = db.query(models.ChatMessage).filter(
+            or_(
+                and_(models.ChatMessage.user_id == other_id, models.ChatMessage.recipient_id == me),
+                and_(models.ChatMessage.user_id == me, models.ChatMessage.recipient_id == other_id),
+            ),
+            models.ChatMessage.id > last_id,
+            models.ChatMessage.user_id != me,
+        ).count()
+        if count:
+            result[key] = count
+
+    return result
+
+
+@router.post("/mark-read")
+def mark_read(
+    body: MarkReadRequest,
+    current_user: models.User = Depends(auth_utils.get_current_user),
+    db: Session = Depends(get_db),
+):
+    me = current_user.id
+    key = body.convo_key
+
+    if key == "public":
+        latest = db.query(func.max(models.ChatMessage.id)).filter(
+            models.ChatMessage.recipient_id.is_(None)
+        ).scalar() or 0
+    else:
+        try:
+            other_id = int(key)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid convo_key")
+        latest = db.query(func.max(models.ChatMessage.id)).filter(
+            or_(
+                and_(models.ChatMessage.user_id == me, models.ChatMessage.recipient_id == other_id),
+                and_(models.ChatMessage.user_id == other_id, models.ChatMessage.recipient_id == me),
+            )
+        ).scalar() or 0
+
+    _upsert_read(db, me, key, latest)
+    return {"ok": True}
 
 
 @router.websocket("/ws")

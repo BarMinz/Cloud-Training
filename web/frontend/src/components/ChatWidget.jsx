@@ -328,6 +328,19 @@ export default function ChatWidget() {
     api.get('/chat/users').then((rows) => setUsers(rows || [])).catch(() => {})
     ensureLoaded(PUBLIC)
     connect()
+    // Seed unread counts from server so badges survive page reloads
+    api.get('/chat/unread').then((counts) => {
+      if (!counts || typeof counts !== 'object') return
+      setConvos((prev) => {
+        const next = { ...prev }
+        for (const [key, count] of Object.entries(counts)) {
+          if (count > 0) {
+            next[key] = { ...(next[key] || { msgs: [], loaded: false }), unread: count }
+          }
+        }
+        return next
+      })
+    }).catch(() => {})
     return () => {
       if (reconnectTimer.current) clearTimeout(reconnectTimer.current)
       if (wsRef.current) {
@@ -343,6 +356,7 @@ export default function ChatWidget() {
     ensureLoaded(active)
     setConvos((prev) => prev[active] ? { ...prev, [active]: { ...prev[active], unread: 0 } } : prev)
     requestAnimationFrame(() => scrollToBottom(false))
+    api.post('/chat/mark-read', { convo_key: active }).catch(() => {})
   }, [active, open, ensureLoaded, scrollToBottom])
 
   useEffect(() => {

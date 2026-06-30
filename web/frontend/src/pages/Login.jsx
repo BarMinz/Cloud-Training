@@ -131,6 +131,14 @@ export default function Login() {
               {loading && <Loader2 className="w-4 h-4 animate-spin" />}
               {mode === 'login' ? 'Sign In' : 'Create Account'}
             </button>
+
+            {mode === 'login' && (
+              <div className="text-center mt-3">
+                <Link to="/forgot-password" className="text-xs text-slate-500 hover:text-slate-300 transition-colors">
+                  Forgot your password?
+                </Link>
+              </div>
+            )}
           </form>
 
           {mode === 'register' && (

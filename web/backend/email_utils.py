@@ -98,3 +98,41 @@ def send_grade_notification(to: str, username: str, phase_title: str, grade: str
     )
 
     send_async(to, subject, html, text)
+
+
+def send_password_reset(to: str, username: str, reset_url: str) -> None:
+    subject = f"Reset your password | {APP_NAME}"
+
+    html = f"""<!DOCTYPE html>
+<html><body style="margin:0;padding:0;background:#f1f5f9;font-family:system-ui,sans-serif;">
+  <div style="max-width:520px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.1);">
+    <div style="padding:6px 0;background:#4f46e5;"></div>
+    <div style="padding:32px 36px;">
+      <p style="margin:0 0 4px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;">{APP_NAME}</p>
+      <h1 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#0f172a;">Password Reset</h1>
+      <p style="margin:0 0 16px;font-size:14px;color:#475569;">Hi {username},</p>
+      <p style="margin:0 0 24px;font-size:14px;color:#475569;">
+        We received a request to reset your password. Click the button below to choose a new one.
+        This link expires in <strong>1 hour</strong>.
+      </p>
+      <a href="{reset_url}" style="display:inline-block;padding:10px 24px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:8px;font-size:14px;font-weight:600;">Reset Password</a>
+      <p style="margin:24px 0 0;font-size:12px;color:#94a3b8;">
+        If you didn't request this, you can safely ignore this email — your password won't change.
+      </p>
+    </div>
+    <div style="padding:16px 36px;border-top:1px solid #f1f5f9;font-size:11px;color:#94a3b8;">
+      This is an automated message from {APP_NAME}. Please do not reply.
+    </div>
+  </div>
+</body></html>"""
+
+    text = (
+        f"{APP_NAME} — Password Reset\n\n"
+        f"Hi {username},\n\n"
+        f"We received a request to reset your password.\n"
+        f"Click the link below to choose a new one (expires in 1 hour):\n\n"
+        f"{reset_url}\n\n"
+        f"If you didn't request this, you can safely ignore this email."
+    )
+
+    send_async(to, subject, html, text)
