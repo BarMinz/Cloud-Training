@@ -68,6 +68,67 @@ def run_migrations(engine):
         conn.execute(text("CREATE INDEX IF NOT EXISTS ix_chat_read_positions_user_id ON chat_read_positions(user_id)"))
         conn.commit()
 
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS phases (
+                id INTEGER PRIMARY KEY,
+                title TEXT NOT NULL DEFAULT '',
+                subtitle TEXT NOT NULL DEFAULT '',
+                icon TEXT NOT NULL DEFAULT '',
+                color TEXT NOT NULL DEFAULT '',
+                accent TEXT NOT NULL DEFAULT '',
+                difficulty TEXT NOT NULL DEFAULT '',
+                estimated_time TEXT NOT NULL DEFAULT '',
+                description TEXT NOT NULL DEFAULT '',
+                objectives TEXT NOT NULL DEFAULT '[]',
+                tasks TEXT NOT NULL DEFAULT '[]',
+                tips TEXT NOT NULL DEFAULT '[]',
+                updated_at DATETIME DEFAULT (datetime('now'))
+            )
+        """))
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS phase_revisions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                phase_id INTEGER NOT NULL REFERENCES phases(id),
+                snapshot TEXT NOT NULL,
+                author_id INTEGER REFERENCES users(id),
+                author_username TEXT,
+                created_at DATETIME DEFAULT (datetime('now'))
+            )
+        """))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_phase_revisions_phase_id ON phase_revisions(phase_id)"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_phase_revisions_created_at ON phase_revisions(created_at)"))
+        conn.commit()
+
+        # Seed phases from JSON if table empty
+        row = conn.execute(text("SELECT COUNT(*) FROM phases")).fetchone()
+        if row and row[0] == 0:
+            import json, os
+            seed_path = os.path.join(os.path.dirname(__file__), 'seed_data', 'phases.json')
+            if os.path.exists(seed_path):
+                with open(seed_path, 'r', encoding='utf-8') as f:
+                    phases = json.load(f)
+                for ph in phases:
+                    conn.execute(text("""
+                        INSERT INTO phases (id, title, subtitle, icon, color, accent, difficulty,
+                                            estimated_time, description, objectives, tasks, tips)
+                        VALUES (:id, :title, :subtitle, :icon, :color, :accent, :difficulty,
+                                :estimated_time, :description, :objectives, :tasks, :tips)
+                    """), {
+                        'id': ph['id'],
+                        'title': ph.get('title', ''),
+                        'subtitle': ph.get('subtitle', ''),
+                        'icon': ph.get('icon', ''),
+                        'color': ph.get('color', ''),
+                        'accent': ph.get('accent', ''),
+                        'difficulty': ph.get('difficulty', ''),
+                        'estimated_time': ph.get('estimatedTime', ''),
+                        'description': ph.get('description', ''),
+                        'objectives': json.dumps(ph.get('objectives', []), ensure_ascii=False),
+                        'tasks': json.dumps(ph.get('tasks', []), ensure_ascii=False),
+                        'tips': json.dumps(ph.get('tips', []), ensure_ascii=False),
+                    })
+                conn.commit()
+
 
 
 class Base(DeclarativeBase):

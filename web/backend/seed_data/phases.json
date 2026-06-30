@@ -1,0 +1,546 @@
+[
+  {
+    "id": 1,
+    "title": "Ticket Simulation",
+    "subtitle": "Support & Prioritization",
+    "icon": "🎫",
+    "color": "from-sky-500 to-blue-600",
+    "accent": "#38bdf8",
+    "difficulty": "Beginner",
+    "estimatedTime": "2–3 hours",
+    "description": "Step into a real support shift. You'll receive 4 live tickets from customers, assign the correct priority to each, and carry on multi-turn conversations until every issue is resolved.",
+    "objectives": [
+      "Assign the correct priority level (Critical / High / Medium / Low) to each of the 4 tickets",
+      "Engage in multi-turn conversations — read each customer's follow-up and adapt your response",
+      "Identify the issue type behind each ticket: critical infrastructure outage, VPN misconfiguration, server performance, or a routine service request",
+      "Communicate professionally and with appropriate urgency across different severity levels",
+      "Resolve all 4 tickets by guiding each customer to a confirmed fix"
+    ],
+    "tasks": [
+      {
+        "id": "t1-1",
+        "label": "Read all 4 tickets and assign each a priority level before opening any conversation"
+      },
+      {
+        "id": "t1-2",
+        "label": "Handle the Critical ticket: a customer whose entire Kamatera environment is suddenly unreachable"
+      },
+      {
+        "id": "t1-3",
+        "label": "Handle the High ticket: a team whose VPN to their Kamatera servers keeps dropping"
+      },
+      {
+        "id": "t1-4",
+        "label": "Handle the Medium ticket: a shared Windows server on Kamatera running very slowly for all users"
+      },
+      {
+        "id": "t1-5",
+        "label": "Handle the Low ticket: a server creation request on an existing Kamatera account"
+      },
+      {
+        "id": "t1-6",
+        "label": "For each ticket, reply to the customer's follow-ups and guide them to a resolution"
+      },
+      {
+        "id": "t1-7",
+        "label": "Mark each ticket as resolved once the customer confirms the issue is fixed"
+      }
+    ],
+    "tips": [
+      "Assign priorities before replying — triage first, then engage",
+      "Customers send follow-up messages with new details after each reply — read them carefully before responding again",
+      "For the Critical ticket: when servers show as running but are externally unreachable, think network and firewall before anything else",
+      "For the Low ticket: always collect all required specs and network details before provisioning a server — incomplete requests cause delays"
+    ]
+  },
+  {
+    "id": 2,
+    "title": "LAMP Project",
+    "subtitle": "Linux, Apache, MySQL, PHP",
+    "icon": "🌐",
+    "color": "from-emerald-500 to-teal-600",
+    "accent": "#34d399",
+    "difficulty": "Beginner",
+    "estimatedTime": "3–4 hours",
+    "description": "Build a LAMP stack from scratch inside your own Ubuntu 24.04 container, entirely from the browser. You'll install and configure Apache, MySQL, and PHP step by step, then deploy a PHP page that reads from a live database.",
+    "objectives": [
+      "Work confidently in a Linux terminal via the browser-based lab",
+      "Install Apache, MySQL, and PHP using apt on Ubuntu 24.04",
+      "Configure a MySQL database and user with correct permissions",
+      "Write a PHP page that connects to MySQL and displays data",
+      "Diagnose and fix common service and configuration errors using logs"
+    ],
+    "tasks": [
+      {
+        "id": "t2-1",
+        "label": "Open the LAMP Lab from this page and wait for the terminal to connect"
+      },
+      {
+        "id": "t2-2",
+        "label": "Run 'apt update' to refresh package lists before installing anything"
+      },
+      {
+        "id": "t2-3",
+        "label": "Install Apache2 with 'apt install -y apache2', then start it with 'service apache2 start'"
+      },
+      {
+        "id": "t2-4",
+        "label": "Install MySQL with 'apt install -y mysql-server', then start it with 'service mysql start'"
+      },
+      {
+        "id": "t2-5",
+        "label": "Open the MySQL shell and create a database, a dedicated user, and grant it full privileges on that database"
+      },
+      {
+        "id": "t2-6",
+        "label": "Install PHP and its Apache and MySQL extensions: 'apt install -y php libapache2-mod-php php-mysql'"
+      },
+      {
+        "id": "t2-7",
+        "label": "Create a PHP file in /var/www/html/ that connects to your database and displays a result"
+      },
+      {
+        "id": "t2-8",
+        "label": "Restart Apache with 'service apache2 restart' and verify the PHP page loads without errors"
+      },
+      {
+        "id": "t2-9",
+        "label": "If something breaks, check /var/log/apache2/error.log for the root cause"
+      }
+    ],
+    "tips": [
+      "Always run 'apt update' first — skipping it causes 'package not found' errors",
+      "Use 'service <name> start/status' instead of systemctl — the container has no systemd",
+      "In Ubuntu 24.04, connect to MySQL as root by running 'mysql' directly (you're already root in the container)",
+      "If PHP can't connect to MySQL, double-check the hostname ('127.0.0.1' not 'localhost'), username, password, and database name in your PHP file",
+      "Your container persists between sessions — you can close the browser and pick up exactly where you left off"
+    ]
+  },
+  {
+    "id": 3,
+    "title": "Troubleshooting Lab",
+    "subtitle": "Advanced Repair",
+    "icon": "🔧",
+    "color": "from-orange-500 to-amber-600",
+    "accent": "#fb923c",
+    "difficulty": "Intermediate",
+    "estimatedTime": "4–5 hours",
+    "description": "A deliberately broken LAMP environment has been handed to you. Your job is to diagnose and repair every issue. GPT is allowed as a reference; Shraga (Claude) is not available for this phase.",
+    "objectives": [
+      "Systematically diagnose a broken LAMP stack",
+      "Identify and resolve multiple layered faults",
+      "Use logs and diagnostic commands to trace the root cause",
+      "Restore full functionality without reinstalling"
+    ],
+    "tasks": [
+      {
+        "id": "t3-1",
+        "label": "Access the broken environment via SSH"
+      },
+      {
+        "id": "t3-2",
+        "label": "Check all service statuses (apache2, mysql, php)"
+      },
+      {
+        "id": "t3-3",
+        "label": "Read /var/log/apache2/error.log and mysql error logs"
+      },
+      {
+        "id": "t3-4",
+        "label": "Identify and fix Apache configuration errors"
+      },
+      {
+        "id": "t3-5",
+        "label": "Resolve MySQL connectivity or permission issues"
+      },
+      {
+        "id": "t3-6",
+        "label": "Fix any PHP or file-permission related problems"
+      },
+      {
+        "id": "t3-7",
+        "label": "Confirm the application is fully functional end-to-end"
+      },
+      {
+        "id": "t3-8",
+        "label": "Document every issue found and how you resolved it"
+      }
+    ],
+    "tips": [
+      "Start with service status before touching config files",
+      "Check file permissions — LAMP breaks often come from wrong owners or modes",
+      "One fix can reveal the next problem. Stay patient and methodical"
+    ]
+  },
+  {
+    "id": 4,
+    "title": "Firewall Lab",
+    "subtitle": "NAT & Port Forwarding",
+    "icon": "🛡️",
+    "color": "from-red-500 to-rose-600",
+    "accent": "#f87171",
+    "difficulty": "Intermediate",
+    "estimatedTime": "4–5 hours",
+    "description": "Secure your LAMP stack by placing it behind a firewall. You'll configure Network Address Translation (NAT) and port forwarding rules so that external traffic reaches the web server through a controlled gateway.",
+    "objectives": [
+      "Understand network segmentation and DMZ concepts",
+      "Configure a firewall VM as a gateway between the internet and the LAMP server",
+      "Set up NAT so the LAMP server uses a private IP",
+      "Create port-forwarding rules to expose port 80/443 externally",
+      "Verify that direct access to the LAMP server is blocked without firewall"
+    ],
+    "tasks": [
+      {
+        "id": "t4-1",
+        "label": "Deploy a firewall VM (pfSense or similar) on CWM"
+      },
+      {
+        "id": "t4-2",
+        "label": "Assign the LAMP server a private IP and route it through the firewall"
+      },
+      {
+        "id": "t4-3",
+        "label": "Configure WAN and LAN interfaces on the firewall"
+      },
+      {
+        "id": "t4-4",
+        "label": "Create a NAT rule to forward port 80 to the LAMP server's private IP"
+      },
+      {
+        "id": "t4-5",
+        "label": "Verify external access to the LAMP site via firewall public IP"
+      },
+      {
+        "id": "t4-6",
+        "label": "Confirm direct access to the LAMP server's old public IP is blocked"
+      },
+      {
+        "id": "t4-7",
+        "label": "Add a firewall rule to allow SSH only from your IP"
+      }
+    ],
+    "tips": [
+      "Double-check that your firewall rules are saved and applied — not just drafted",
+      "Use 'curl' from an external machine to test port access",
+      "pfSense's dashboard shows live traffic — use it to debug blocked packets"
+    ]
+  },
+  {
+    "id": 5,
+    "title": "Windows Infrastructure",
+    "subtitle": "AD, RDP, FTP & IIS",
+    "icon": "🪟",
+    "color": "from-blue-500 to-indigo-600",
+    "accent": "#60a5fa",
+    "difficulty": "Intermediate",
+    "estimatedTime": "5–6 hours",
+    "description": "Set up a Windows Server environment with Active Directory, configure remote desktop access, run an FTP server, and host a website using IIS — the core building blocks of Windows-based corporate infrastructure.",
+    "objectives": [
+      "Install and configure Windows Server on a CWM VM",
+      "Promote the server to a Domain Controller with Active Directory",
+      "Create organizational units, groups, and user accounts in AD",
+      "Configure RDP access for domain users",
+      "Set up an FTP server and IIS website"
+    ],
+    "tasks": [
+      {
+        "id": "t5-1",
+        "label": "Deploy a Windows Server VM on CWM"
+      },
+      {
+        "id": "t5-2",
+        "label": "Install the Active Directory Domain Services (AD DS) role"
+      },
+      {
+        "id": "t5-3",
+        "label": "Promote the server to Domain Controller and create a new domain"
+      },
+      {
+        "id": "t5-4",
+        "label": "Create OUs: IT, HR, Management"
+      },
+      {
+        "id": "t5-5",
+        "label": "Create at least 3 user accounts and assign them to OUs"
+      },
+      {
+        "id": "t5-6",
+        "label": "Enable and test RDP access for a non-admin domain user"
+      },
+      {
+        "id": "t5-7",
+        "label": "Install IIS and publish a simple HTML page"
+      },
+      {
+        "id": "t5-8",
+        "label": "Install and configure an FTP server, create an FTP user"
+      },
+      {
+        "id": "t5-9",
+        "label": "Test FTP access using FileZilla or similar client"
+      }
+    ],
+    "tips": [
+      "Use Server Manager to add all roles before rebooting — saves time",
+      "Group Policy takes effect after 'gpupdate /force' — don't forget it",
+      "IIS default site runs on port 80 — confirm Windows Firewall isn't blocking it"
+    ]
+  },
+  {
+    "id": 6,
+    "title": "Site-to-Site VPN",
+    "subtitle": "Multi-site Networking",
+    "icon": "🔐",
+    "color": "from-violet-500 to-purple-600",
+    "accent": "#a78bfa",
+    "difficulty": "Advanced",
+    "estimatedTime": "5–7 hours",
+    "description": "Extend your network by adding a second site with its own firewall. You'll establish an encrypted Site-to-Site VPN tunnel between both firewalls, allowing resources on each network to communicate securely.",
+    "objectives": [
+      "Deploy a second firewall VM representing a remote office",
+      "Configure IPsec or OpenVPN tunnel between the two firewalls",
+      "Route traffic between both private networks through the VPN",
+      "Verify connectivity from a host on Site A to a host on Site B"
+    ],
+    "tasks": [
+      {
+        "id": "t6-1",
+        "label": "Deploy a second firewall VM on CWM with a different subnet"
+      },
+      {
+        "id": "t6-2",
+        "label": "Configure IPsec Phase 1 (IKE) settings on both firewalls"
+      },
+      {
+        "id": "t6-3",
+        "label": "Configure IPsec Phase 2 (tunnel) settings with matching parameters"
+      },
+      {
+        "id": "t6-4",
+        "label": "Add static routes on both firewalls for the opposite subnet"
+      },
+      {
+        "id": "t6-5",
+        "label": "Bring the tunnel up and confirm it shows as 'Established'"
+      },
+      {
+        "id": "t6-6",
+        "label": "Ping a host on Site B from a host on Site A"
+      },
+      {
+        "id": "t6-7",
+        "label": "Access the LAMP site from Site B through the VPN tunnel"
+      },
+      {
+        "id": "t6-8",
+        "label": "Document the tunnel parameters and network diagram"
+      }
+    ],
+    "tips": [
+      "Both ends must use identical encryption settings — a mismatch means no tunnel",
+      "pfSense logs show Phase 1/2 failures with clear error codes",
+      "Test with ping before trying complex services — verify layer 3 first"
+    ]
+  },
+  {
+    "id": 7,
+    "title": "AI Ticket Handling",
+    "subtitle": "Customer Conversations",
+    "icon": "🤖",
+    "color": "from-cyan-500 to-sky-600",
+    "accent": "#22d3ee",
+    "difficulty": "Intermediate",
+    "estimatedTime": "3–4 hours",
+    "description": "Handle a series of AI-generated customer support conversations. Practice recognizing patterns, crafting professional responses, and using AI tools effectively to resolve issues faster.",
+    "objectives": [
+      "Work through realistic customer support conversations",
+      "Use AI assistance to draft and improve responses",
+      "Identify escalation scenarios vs. self-service solutions",
+      "Maintain a professional tone under pressure"
+    ],
+    "tasks": [
+      {
+        "id": "t7-1",
+        "label": "Complete 5 simulated customer chat conversations"
+      },
+      {
+        "id": "t7-2",
+        "label": "For each conversation, identify the core problem and propose a solution"
+      },
+      {
+        "id": "t7-3",
+        "label": "Use an AI tool to help draft at least 2 professional responses"
+      },
+      {
+        "id": "t7-4",
+        "label": "Flag any conversation that requires escalation and explain why"
+      },
+      {
+        "id": "t7-5",
+        "label": "Write a reflection: how did AI assistance help (or hinder) the process?"
+      }
+    ],
+    "tips": [
+      "Don't just paste AI output — review it, edit it, make it yours",
+      "Customers respond better to empathy before technical fixes",
+      "If a conversation has a hidden context clue, look for it before assuming"
+    ]
+  },
+  {
+    "id": 8,
+    "title": "cPanel Migration + DNS",
+    "subtitle": "CentOS 7 → AlmaLinux",
+    "icon": "🔄",
+    "color": "from-yellow-500 to-orange-500",
+    "accent": "#fbbf24",
+    "difficulty": "Advanced",
+    "estimatedTime": "6–8 hours",
+    "description": "Perform a live server migration from CentOS 7 (end-of-life) to AlmaLinux using cPanel's migration tools. After migration, update DNS records to point the domain to the new server.",
+    "objectives": [
+      "Understand the CentOS 7 EOL situation and why migration is needed",
+      "Use cPanel's transfer/migration wizard to move accounts",
+      "Validate that all sites and email are functioning on AlmaLinux",
+      "Update DNS A/MX records to cut over to the new server"
+    ],
+    "tasks": [
+      {
+        "id": "t8-1",
+        "label": "Review the source CentOS 7 server — list all cPanel accounts"
+      },
+      {
+        "id": "t8-2",
+        "label": "Provision an AlmaLinux server and install cPanel/WHM"
+      },
+      {
+        "id": "t8-3",
+        "label": "Run the cPanel Transfer Tool to migrate all accounts"
+      },
+      {
+        "id": "t8-4",
+        "label": "Verify each migrated account's files, databases, and email"
+      },
+      {
+        "id": "t8-5",
+        "label": "Update DNS A records to point to the new server IP"
+      },
+      {
+        "id": "t8-6",
+        "label": "Update MX records if email was hosted on the old server"
+      },
+      {
+        "id": "t8-7",
+        "label": "Monitor for 24 hours post-cutover and confirm no issues"
+      },
+      {
+        "id": "t8-8",
+        "label": "Decommission or snapshot the old CentOS 7 server"
+      }
+    ],
+    "tips": [
+      "Run the migration first in 'copy' mode — don't cut DNS until you've verified everything",
+      "Test with /etc/hosts overrides before changing real DNS",
+      "DNS propagation can take up to 48 hours — plan the cutover window accordingly"
+    ]
+  },
+  {
+    "id": 9,
+    "title": "AI Debugging",
+    "subtitle": "Shraga & Claude Investigation",
+    "icon": "🧠",
+    "color": "from-fuchsia-500 to-pink-600",
+    "accent": "#e879f9",
+    "difficulty": "Advanced",
+    "estimatedTime": "4–6 hours",
+    "description": "Use AI tools (Shraga and Claude) to investigate and solve complex technical problems. This phase tests your ability to describe problems precisely, interpret AI responses critically, and apply solutions effectively.",
+    "objectives": [
+      "Learn to communicate technical problems clearly to an AI",
+      "Critically evaluate AI-suggested solutions before applying them",
+      "Use AI for log analysis, config review, and root-cause investigation",
+      "Solve at least 3 complex technical scenarios with AI assistance"
+    ],
+    "tasks": [
+      {
+        "id": "t9-1",
+        "label": "Investigate a broken service using AI — provide logs and get a diagnosis"
+      },
+      {
+        "id": "t9-2",
+        "label": "Use AI to review a configuration file and identify security risks"
+      },
+      {
+        "id": "t9-3",
+        "label": "Ask AI to explain a complex error message and its solution"
+      },
+      {
+        "id": "t9-4",
+        "label": "Solve a networking issue by describing symptoms to AI and following its guidance"
+      },
+      {
+        "id": "t9-5",
+        "label": "Write a post-mortem: what AI got right, what it got wrong, what you had to verify manually"
+      }
+    ],
+    "tips": [
+      "Paste exact error messages — vague questions get vague answers",
+      "AI can hallucinate. Always test solutions in a safe environment first",
+      "Treat AI as a smart colleague, not an oracle — it can be wrong"
+    ]
+  },
+  {
+    "id": 10,
+    "title": "KVM Operations Lab",
+    "subtitle": "VirtIO, Migration & Recovery",
+    "icon": "⚙️",
+    "color": "from-slate-500 to-zinc-600",
+    "accent": "#94a3b8",
+    "difficulty": "Advanced",
+    "estimatedTime": "6–8 hours",
+    "description": "Master KVM hypervisor operations: configure VirtIO drivers for optimized VM performance, perform live and offline migrations between hosts, restore VMs from snapshots, and recover from common failure scenarios.",
+    "objectives": [
+      "Understand KVM and libvirt architecture",
+      "Configure and verify VirtIO disk and network drivers",
+      "Perform live migration of a running VM between hosts",
+      "Restore a VM from a snapshot after simulated failure",
+      "Recover a VM with a corrupted disk or boot issue"
+    ],
+    "tasks": [
+      {
+        "id": "t10-1",
+        "label": "Create a KVM VM using virt-manager or virsh"
+      },
+      {
+        "id": "t10-2",
+        "label": "Install VirtIO drivers and confirm both disk and NIC are using VirtIO"
+      },
+      {
+        "id": "t10-3",
+        "label": "Take a snapshot of the running VM"
+      },
+      {
+        "id": "t10-4",
+        "label": "Simulate corruption (delete a system file), then restore from snapshot"
+      },
+      {
+        "id": "t10-5",
+        "label": "Configure shared storage (NFS) between two KVM hosts"
+      },
+      {
+        "id": "t10-6",
+        "label": "Perform a live migration of the VM to the second host"
+      },
+      {
+        "id": "t10-7",
+        "label": "Simulate a failed migration and recover the VM on the source host"
+      },
+      {
+        "id": "t10-8",
+        "label": "Document the migration process and any issues encountered"
+      }
+    ],
+    "tips": [
+      "VirtIO requires drivers installed inside the guest — check Device Manager on Windows guests",
+      "Live migration needs shared storage and matching CPU flags on both hosts",
+      "Use 'virsh migrate --live' — watch 'virsh list' on both hosts during migration"
+    ]
+  }
+]

@@ -81,3 +81,32 @@ class ChatReadPosition(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     convo_key = Column(String, nullable=False)       # "public" or str(other_user_id)
     last_message_id = Column(Integer, nullable=False, default=0)
+
+class Phase(Base):
+    __tablename__ = "phases"
+
+    id = Column(Integer, primary_key=True, index=True)  # 1..10
+    title = Column(String, nullable=False, default="")
+    subtitle = Column(String, nullable=False, default="")
+    icon = Column(String, nullable=False, default="")
+    color = Column(String, nullable=False, default="")
+    accent = Column(String, nullable=False, default="")
+    difficulty = Column(String, nullable=False, default="")
+    estimated_time = Column(String, nullable=False, default="")
+    description = Column(Text, nullable=False, default="")
+    objectives = Column(Text, nullable=False, default="[]")   # JSON array of strings
+    tasks = Column(Text, nullable=False, default="[]")        # JSON array of {id,label}
+    tips = Column(Text, nullable=False, default="[]")         # JSON array of strings
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class PhaseRevision(Base):
+    __tablename__ = "phase_revisions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    phase_id = Column(Integer, ForeignKey("phases.id"), nullable=False, index=True)
+    snapshot = Column(Text, nullable=False)                   # full JSON of phase at save time
+    author_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    author_username = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+

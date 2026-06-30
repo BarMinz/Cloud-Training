@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from database import engine, run_migrations
 import models
-from routers import auth, progress, admin, analytics, containers, chat
+from routers import auth, progress, admin, analytics, containers, chat, phases
 
 models.Base.metadata.create_all(bind=engine)
 run_migrations(engine)
@@ -29,6 +29,7 @@ app.include_router(admin.router)
 app.include_router(analytics.router)
 app.include_router(containers.router)
 app.include_router(chat.router)
+app.include_router(phases.router)
 
 
 @app.get("/api/health")
