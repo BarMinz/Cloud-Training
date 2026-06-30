@@ -11,12 +11,7 @@ from routers import auth, progress, admin, analytics, containers, chat, phases
 models.Base.metadata.create_all(bind=engine)
 run_migrations(engine)
 
-app = FastAPI(
-    title="Cloud Training API",
-    docs_url="/api/docs",
-    redoc_url="/api/redoc",
-    openapi_url="/api/openapi.json",
-)
+app = FastAPI(title="Cloud Training API", docs_url=None, redoc_url=None)
 
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=["79.108.163.7", "cloud-training.online", "localhost", "127.0.0.1"])
 
