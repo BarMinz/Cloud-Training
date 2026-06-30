@@ -357,7 +357,8 @@ export default function ChatWidget() {
     setConvos((prev) => prev[active] ? { ...prev, [active]: { ...prev[active], unread: 0 } } : prev)
     requestAnimationFrame(() => scrollToBottom(false))
     api.post('/chat/mark-read', { convo_key: active }).catch(() => {})
-  }, [active, open, ensureLoaded, scrollToBottom])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, open])
 
   useEffect(() => {
     if (!user) return

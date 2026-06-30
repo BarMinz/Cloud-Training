@@ -233,3 +233,46 @@ git push origin master
 |----------|------|-------|
 | bar | admin | barminz1209@gmail.com |
 | ofir | employee | ofirl@kamatera.com |
+
+---
+
+## Phases Editor (shipped 2026-06-30)
+
+**Trigger**: admin user edits a training phase via the website.
+
+### Data model
+- `phases` table (SQLite, 10 rows seeded from `frontend/src/data/phases.js` via `backend/seed_data/phases.json`). Columns: `id, title, subtitle, icon, color, accent, difficulty, estimated_time, description, objectives (json text), tasks (json text), tips (json text), updated_at`.
+- `phase_revisions` table: `id, phase_id, snapshot (full json), author_id, author_username, created_at`. Capped at last 20 per phase.
+
+### Backend routes — `backend/routers/phases.py`
+- `GET /api/phases/` — public, list all
+- `GET /api/phases/{id}` — public, single phase
+- `PUT /api/phases/{id}` — admin only, edits + auto-snapshots
+- `POST /api/phases/{id}/upload` — admin, multipart image upload (png/jpg/jpeg/webp/gif, 10 MB max) → `/var/www/cloud-training/uploads/phases/{id}/{uuid}.{ext}`. Nginx `client_max_body_size 12M;` enabled.
+- `DELETE /api/phases/{id}/uploads/{filename}` — admin, path-traversal-guarded
+- `GET /api/phases/{id}/revisions` — admin
+- `GET /api/phases/{id}/revisions/{rev_id}` — admin
+- `POST /api/phases/{id}/revisions/{rev_id}/revert` — admin (snapshots current state first)
+
+### Frontend
+- `src/contexts/PhasesContext.jsx` — `PhasesProvider` (in `App.jsx > ProtectedLayout`) + `usePhases()` hook = `{ phases, loading, refresh }`. All four consumers — `Dashboard.jsx`, `Profile.jsx`, `Admin.jsx`, `PhaseDetail.jsx` — fetch via the hook (no more static `PHASES` import). `phases.js` is kept only as the seed source + still exports `DIFFICULTY_COLORS` / `STATUS_META`.
+- `src/components/PhaseEditor.jsx` — full edit form. Fields: title, subtitle, Markdown description with image upload (GFM via `react-markdown` + `remark-gfm`), Appearance card (icon emoji picker w/ 20 common picks, difficulty dropdown, estimated time, 10-preset color palette, accent hex picker w/ native `<input type="color">`), three list editors (objectives/tasks/tips) with add/remove/reorder. Bottom sticky toolbar: History (left), Cancel + Save (right). Revisions drawer slides in from the right.
+- `src/pages/PhaseDetail.jsx` — admins see **Edit phase** button on the right of "Back to Dashboard"; admins also bypass `isLocked`. Read view renders `phase.description` through `<ReactMarkdown remarkPlugins={[remarkGfm]}>` inside `.md-preview` styled container.
+- `src/pages/Dashboard.jsx` — `isLocked()` short-circuits to `false` for admin/main_admin.
+- `.md-preview` CSS class in `src/index.css` styles the rendered Markdown (dark + light theme).
+- Tailwind gradient classes for the 10 color presets are listed verbatim in `PhaseEditor.jsx` so Tailwind picks them up at build time.
+
+### Image lifecycle
+- Upload inserts `![](/uploads/phases/{id}/<uuid>.<ext>)` at cursor.
+- On Save, `extractImageUrls()` diffs old vs new description; removed URLs trigger `DELETE /api/phases/{id}/uploads/<filename>` so the disk doesn't leak.
+
+### Common pitfalls
+- New gradient classes must be added BOTH to `COLOR_PRESETS` in `PhaseEditor.jsx` AND used somewhere Tailwind can scan. Adding a gradient string only in DB content will leave the class missing from the CSS bundle.
+- Editing the inject channel: file size of `PhaseEditor.jsx` now ~17 KB. Use multi-chunk `cat >>` writes; small surgical edits via `python3 - <<'PYEOF'` heredoc + `str.replace`. Heredoc cap ~2 KB.
+- Python heredoc inside bash: do NOT use Python `text("""...""")` inside an outer Python `"""..."""` block — escape or use single-quote triple-strings, otherwise `IndentationError` at runtime.
+- Build + deploy cycle unchanged: `npm run build && rm -rf /var/www/cloud-training/assets && cp -a dist/. /var/www/cloud-training/`. Backend restart: `rc-service cloud-training-api restart`.
+
+### Backups (safe to clean once stable)
+- `*.bak.phases` — pre-DB-migration (`models.py`, `database.py`, `main.py`, `PhaseDetail.jsx`, `Dashboard.jsx`, `Profile.jsx`, `Admin.jsx`, `App.jsx`)
+- `PhaseEditor.jsx.bak.md`, `.bak.theme`, `.bak.history` — incremental editor checkpoints
+- `cloud-training.conf.bak.uploads` — pre-nginx-upload-size
